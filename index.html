@@ -232,13 +232,40 @@
 <section class="mobile-flow">
   <div class="mf-title"><div><small>CHA SOLAR</small><h2>Energy Flow</h2></div><div id="mobileSource" class="mobile-source">LIVE</div></div>
   <div class="flow-stage">
-    <svg class="flow-svg" viewBox="0 0 360 520" preserveAspectRatio="none">
-      <path class="ef solar" d="M180 108 V176"/>
-      <path class="ef grid" d="M103 238 H139"/>
-      <path class="ef home" d="M221 238 H257"/>
-      <path class="ef bat" d="M180 300 V378"/>
-      <path class="ef c1" d="M58 292 V374"/>
-      <path class="ef c2" d="M302 292 V374"/>
+    <svg class="flow-svg" viewBox="0 0 360 560" preserveAspectRatio="none" aria-hidden="true">
+      <path id="mobileSolarPath" class="energy-link solar" d="M180 122 V170"/>
+      <path id="mobileGridIvPath" class="energy-link grid" d="M108 224 H126"/>
+      <path id="mobileIvC2Path" class="energy-link consumer2" d="M234 224 H252"/>
+      <path id="mobileGridC1Path" class="energy-link grid" d="M60 272 V337"/>
+      <path id="mobileBatteryPath" class="energy-link battery-link" d="M180 278 V337"/>
+      <path id="mobileHomePath" class="energy-link consumer2" d="M300 272 V337"/>
+      <path id="mobileMcPath" class="energy-link consumer1" d="M60 433 V456"/>
+
+      <g id="mobileSolarParticles" class="flow-particles solar">
+        <circle r="4"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#mobileSolarPath"/></animateMotion></circle>
+        <circle r="3" opacity=".7"><animateMotion begin="-.9s" dur="1.8s" repeatCount="indefinite"><mpath href="#mobileSolarPath"/></animateMotion></circle>
+      </g>
+      <g id="mobileGridIvParticles" class="flow-particles grid">
+        <circle r="4"><animateMotion dur="1.35s" repeatCount="indefinite"><mpath href="#mobileGridIvPath"/></animateMotion></circle>
+      </g>
+      <g id="mobileIvC2Particles" class="flow-particles consumer2">
+        <circle r="4"><animateMotion dur="1.35s" repeatCount="indefinite"><mpath href="#mobileIvC2Path"/></animateMotion></circle>
+      </g>
+      <g id="mobileGridC1Particles" class="flow-particles grid">
+        <circle r="4"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#mobileGridC1Path"/></animateMotion></circle>
+        <circle r="3" opacity=".7"><animateMotion begin="-.9s" dur="1.8s" repeatCount="indefinite"><mpath href="#mobileGridC1Path"/></animateMotion></circle>
+      </g>
+      <g id="mobileBatteryParticles" class="flow-particles battery-link">
+        <circle r="4"><animateMotion dur="1.7s" repeatCount="indefinite"><mpath href="#mobileBatteryPath"/></animateMotion></circle>
+        <circle r="3" opacity=".7"><animateMotion begin="-.85s" dur="1.7s" repeatCount="indefinite"><mpath href="#mobileBatteryPath"/></animateMotion></circle>
+      </g>
+      <g id="mobileHomeParticles" class="flow-particles consumer2">
+        <circle r="4"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#mobileHomePath"/></animateMotion></circle>
+        <circle r="3" opacity=".7"><animateMotion begin="-.9s" dur="1.8s" repeatCount="indefinite"><mpath href="#mobileHomePath"/></animateMotion></circle>
+      </g>
+      <g id="mobileMcParticles" class="flow-particles consumer1">
+        <circle r="4"><animateMotion dur="1.35s" repeatCount="indefinite"><mpath href="#mobileMcPath"/></animateMotion></circle>
+      </g>
     </svg>
     <div class="fn pv"><i>☀️</i><b>SOLAR</b><strong><span id="mPvPower">0</span><small> W</small></strong><em><span id="mPvVoltage">0.0</span>V · <span id="mPvCurrent">0.0</span>A</em></div>
     <div class="fn gridn"><i>⚡</i><b>GRID</b><strong><span id="mGridVoltage">0.0</span><small> V</small></strong><em><span id="mGridCurrent">0.0</span>A · <span id="mGridFrequency">0.00</span>Hz</em></div>
@@ -246,8 +273,8 @@
     <div class="fn c2n"><i>🏠</i><b>CONSUMER 2</b><strong><span id="mLoadPower">0</span><small> W</small></strong><em><span id="mLoadCurrent">0.0</span>A</em></div>
     <div class="fn c1n"><i>🏭</i><b>CONSUMER 1</b><strong>--<small> W</small></strong><em>CT WAITING</em></div>
     <div class="fn battery"><i>🔋</i><b>BATTERY</b><strong><span id="mBatterySOC">0</span><small>%</small></strong><em><span id="mBatteryVoltage">0.0</span>V · <span id="mBatteryCurrent">0.0</span>A</em></div>
-    <div class="sub mc">⚙️<b>M/C</b><small>CNC · Air Comp.</small></div>
-    <div class="sub house">🏡<b>HOME</b><small>House load</small></div>
+    <div class="fn mcn"><i>⚙️</i><b>M/C</b><em>CNC · Air Comp.</em></div>
+    <div class="fn homen"><i>🏡</i><b>HOME</b><em>House load</em></div>
   </div>
   <div class="flow-note">● จุดสว่างบนเส้นแสดงทิศทางการไหลของพลังงาน</div>
 </section>
