@@ -17,6 +17,45 @@
   >
 
   <style>
+    /* Mobile flow V2: smaller nodes and the real Consumer 1 split layout. */
+    @media (max-width: 699px) {
+      .flow-stage {
+        height: 540px;
+        background: radial-gradient(circle at 50% 48%, rgba(84, 203, 180, .13), transparent 28%), rgba(255, 255, 255, .94);
+      }
+
+      .fn {
+        width: clamp(76px, 22.2vw, 84px);
+        padding: 5px;
+        box-shadow: 0 6px 15px rgba(70, 84, 103, .10);
+      }
+
+      .fn i { font-size: 16px; }
+      .fn b { margin-top: 2px; font-size: 8px; }
+      .fn strong { margin-top: 3px; font-size: 17px; }
+      .fn strong small { font-size: 7px; }
+      .fn em { margin-top: 3px; font-size: 6.8px; }
+
+      .gridn { left: 15%; top: 13.7%; }
+      .pv { left: 50%; top: 13.7%; }
+      .c1n { left: 15%; top: 50.9%; }
+      .iv {
+        left: 50%;
+        top: 50.9%;
+        width: clamp(88px, 25.5vw, 96px);
+        box-shadow: 0 7px 20px rgba(86, 205, 181, .20);
+      }
+      .iv strong { font-size: 11px; }
+      .c2n { left: 85%; top: 50.9%; }
+      .mcn { left: 15%; top: 85.2%; }
+      .battery { left: 50%; top: 85.2%; }
+      .homen { left: 85%; top: 85.2%; }
+      .homen em, .mcn em { font-size: 6.5px; }
+      .homen b, .mcn b { font-size: 9px; }
+    }
+  </style>
+
+  <style>
 
     /* =====================================================
        CHA NAVIGATION
