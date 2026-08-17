@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>CHA Solar - Alarm Center</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f7f8fc;
+      --card: rgba(255,255,255,.95);
+      --text: #445064;
+      --muted: #8a95a6;
+      --border: #e6eaf1;
+
+      --normal: #58b895;
+      --warning: #e0a84e;
+      --critical: #df7777;
+      --info: #6aaecf;
+
+      --shadow:
+        0 10px 28px rgba(72,85,105,.08);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+      color: var(--text);
+
+      background:
+        radial-gradient(
+          circle at 10% 0%,
+          rgba(209,242,232,.75),
+          transparent 28%
+        ),
+        radial-gradient(
+          circle at 90% 0%,
+          rgba(229,222,249,.75),
+          transparent 28%
+        ),
+        var(--bg);
+    }
+
+    header {
+      padding: 16px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 12px;
+
+      background:
+        rgba(255,255,255,.78);
+
+      backdrop-filter: blur(14px);
+
+      border-bottom:
+        1px solid var(--border);
+    }
+
+    .brand h1 {
+      margin: 0;
+
+      font-size: 19px;
+      font-weight: 850;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+
+      color: var(--muted);
+
+      font-size: 11px;
+    }
+
+    .system-pill {
+      padding: 8px 10px;
+
+      border-radius: 999px;
+
+      font-size: 9px;
+      font-weight: 800;
+
+      background: #edf8f3;
+      color: var(--normal);
+    }
+
+    main {
+      max-width: 1100px;
+
+      margin: auto;
+
+      padding: 15px;
+    }
+
+    .page-head {
+      display: flex;
+      align-items: center;
+
+      gap: 10px;
+
+      margin-bottom: 14px;
+    }
+
+    .back-btn {
+      width: 38px;
+      height: 38px;
+
+      border: 0;
+      border-radius: 12px;
+
+      background: white;
+
+      color: #687586;
+
+      font-size: 20px;
+
+      box-shadow: var(--shadow);
+
+      cursor: pointer;
+    }
+
+    .page-head h2 {
+      margin: 0;
+
+      font-size: 21px;
+    }
+
+    .status-card {
+      padding: 16px;
+
+      margin-bottom: 14px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 20px;
+
+      background: var(--card);
+
+      box-shadow: var(--shadow);
+    }
+
+    .status-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      gap: 12px;
+    }
+
+    .status-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status-value {
+      margin-top: 5px;
+
+      font-size: 26px;
+      font-weight: 850;
+    }
+
+    .status-dot {
+      width: 16px;
+      height: 16px;
+
+      border-radius: 50%;
+    }
+
+    .status-normal {
+      color: var(--normal);
+    }
+
+    .status-warning {
+      color: var(--warning);
+    }
+
+    .status-critical {
+      color: var(--critical);
+    }
+
+    .dot-normal {
+      background: var(--normal);
+      box-shadow:
+        0 0 0 6px rgba(88,184,149,.12);
+    }
+
+    .dot-warning {
+      background: var(--warning);
+      box-shadow:
+        0 0 0 6px rgba(224,168,78,.12);
+    }
+
+    .dot-critical {
+      background: var(--critical);
+      box-shadow:
+        0 0 0 6px rgba(223,119,119,.12);
+    }
+
+    .count-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
+      gap: 8px;
+
+      margin-top: 14px;
+    }
+
+    .count-card {
+      padding: 10px;
+
+      border-radius: 13px;
+
+      background: #f7f8fa;
+
+      text-align: center;
+    }
+
+    .count-card label {
+      display: block;
+
+      color: #99a3b0;
+
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .count-card strong {
+      display: block;
+
+      margin-top: 4px;
+
+      font-size: 17px;
+    }
+
+    .section-card {
+      padding: 14px;
+
+      margin-bottom: 14px;
+
+      border:
+        1px solid var(--border);
+
+      border-radius: 20px;
+
+      background: var(--card);
+
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      margin-bottom: 10px;
+
+      font-size: 11px;
+      font-weight: 850;
+
+      color: #6d798a;
+
+      letter-spacing: .5px;
+    }
+
+    .empty {
+      padding: 25px 10px;
+
+      text-align: center;
+
+      color: #a0a9b5;
+
+      font-size: 11px;
+    }
+
+    .alarm-item,
+    .event-item {
+      padding: 12px;
+
+      margin-bottom: 8px;
+
+      border-radius: 14px;
+
+      border:
+        1px solid #edf0f4;
+
+      background: #fafbfc;
+    }
+
+    .alarm-item:last-child,
+    .event-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 10px;
+    }
+
+    .code {
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .level-badge {
+      padding: 5px 7px;
+
+      border-radius: 999px;
+
+      font-size: 8px;
+      font-weight: 800;
+    }
+
+    .level-warning {
+      color: #b47c26;
+      background: #fff5df;
+    }
+
+    .level-critical {
+      color: #bc5a5a;
+      background: #fdecec;
+    }
+
+    .level-info {
+      color: #4f8eaa;
+      background: #eaf5fa;
+    }
+
+    .message {
+      margin-top: 6px;
+
+      color: #697586;
+
+      font-size: 11px;
+    }
+
+    .meta {
+      margin-top: 7px;
+
+      color: #9ba4b1;
+
+      font-size: 9px;
+    }
+
+    .event-active {
+      border-left:
+        4px solid var(--warning);
+    }
+
+    .event-cleared {
+      border-left:
+        4px solid var(--normal);
+    }
+
+    footer {
+      padding: 22px 10px;
+
+      text-align: center;
+
+      color: #a0a9b5;
+
+      font-size: 9px;
+    }
+
+    @media (min-width: 700px) {
+
+      header {
+        padding:
+          18px 28px;
+      }
+
+      .brand h1 {
+        font-size: 25px;
+      }
+
+      main {
+        padding: 24px;
+      }
+
+      .status-card,
+      .section-card {
+        padding: 20px;
+      }
+
+      .count-grid {
+        max-width: 500px;
+      }
+
+    }
+
+  </style>
+</head>
+
+
+<body>
+
+<header>
+
+  <div class="brand">
+    <h1>☀ CHA SOLAR MONITOR</h1>
+    <p>Alarm & Event Center</p>
+  </div>
+
+  <div class="system-pill">
+    SYSTEM ONLINE
+  </div>
+
+</header>
+
+
+<main>
+
+  <div class="page-head">
+
+    <button
+      class="back-btn"
+      onclick="location.href='index.html'"
+    >
+      ‹
+    </button>
+
+    <h2>
+      Alarm Center
+    </h2>
+
+  </div>
+
+
+  <section class="status-card">
+
+    <div class="status-top">
+
+      <div>
+
+        <div class="status-label">
+          CURRENT SYSTEM STATUS
+        </div>
+
+        <div
+          id="mainStatus"
+          class="status-value status-normal"
+        >
+          NORMAL
+        </div>
+
+      </div>
+
+      <div
+        id="mainDot"
+        class="status-dot dot-normal"
+      ></div>
+
+    </div>
+
+
+    <div class="count-grid">
+
+      <div class="count-card">
+        <label>ACTIVE</label>
+        <strong id="activeCount">0</strong>
+      </div>
+
+      <div class="count-card">
+        <label>WARNING</label>
+        <strong
+          id="warningCount"
+          class="status-warning"
+        >
+          0
+        </strong>
+      </div>
+
+      <div class="count-card">
+        <label>CRITICAL</label>
+        <strong
+          id="criticalCount"
+          class="status-critical"
+        >
+          0
+        </strong>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section class="section-card">
+
+    <div class="section-title">
+      ACTIVE ALARMS
+    </div>
+
+    <div id="alarmList">
+      <div class="empty">
+        กำลังโหลด...
+      </div>
+    </div>
+
+  </section>
+
+
+  <section class="section-card">
+
+    <div class="section-title">
+      EVENT HISTORY
+    </div>
+
+    <div id="eventList">
+      <div class="empty">
+        กำลังโหลด...
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+
+<footer>
+  CHA Solar Monitoring System • Alarm Engine
+</footer>
+
+
+<script>
+
+const ALARM_API =
+  "http://localhost:3000/api/alarms";
+
+const EVENT_API =
+  "http://localhost:3000/api/events?limit=100";
+
+
+function formatTime(value) {
+
+  if (!value) {
+    return "--";
+  }
+
+  return new Date(value)
+    .toLocaleString(
+      "th-TH",
+      {
+        dateStyle: "short",
+        timeStyle: "medium"
+      }
+    );
+
+}
+
+
+function updateMainStatus(data) {
+
+  const status =
+    document.getElementById("mainStatus");
+
+  const dot =
+    document.getElementById("mainDot");
+
+
+  status.className =
+    "status-value";
+
+  dot.className =
+    "status-dot";
+
+
+  if (data.critical > 0) {
+
+    status.textContent =
+      "CRITICAL";
+
+    status.classList.add(
+      "status-critical"
+    );
+
+    dot.classList.add(
+      "dot-critical"
+    );
+
+  }
+
+  else if (
+    data.warning > 0 ||
+    data.info > 0
+  ) {
+
+    status.textContent =
+      "WARNING";
+
+    status.classList.add(
+      "status-warning"
+    );
+
+    dot.classList.add(
+      "dot-warning"
+    );
+
+  }
+
+  else {
+
+    status.textContent =
+      "NORMAL";
+
+    status.classList.add(
+      "status-normal"
+    );
+
+    dot.classList.add(
+      "dot-normal"
+    );
+
+  }
+
+
+  document.getElementById(
+    "activeCount"
+  ).textContent =
+    data.active;
+
+
+  document.getElementById(
+    "warningCount"
+  ).textContent =
+    data.warning;
+
+
+  document.getElementById(
+    "criticalCount"
+  ).textContent =
+    data.critical;
+
+}
+
+
+function renderAlarms(data) {
+
+  const box =
+    document.getElementById(
+      "alarmList"
+    );
+
+
+  if (!data.alarms.length) {
+
+    box.innerHTML =
+      `
+      <div class="empty">
+        ✓ ไม่มี Active Alarm
+      </div>
+      `;
+
+    return;
+
+  }
+
+
+  box.innerHTML =
+    data.alarms
+      .map(
+        alarm => {
+
+          const levelClass =
+            alarm.level === "CRITICAL"
+              ? "level-critical"
+              : alarm.level === "WARNING"
+                ? "level-warning"
+                : "level-info";
+
+
+          return `
+            <div class="alarm-item">
+
+              <div class="item-top">
+
+                <div class="code">
+                  ${alarm.code}
+                </div>
+
+                <div
+                  class="level-badge ${levelClass}"
+                >
+                  ${alarm.level}
+                </div>
+
+              </div>
+
+              <div class="message">
+                ${alarm.message}
+              </div>
+
+              <div class="meta">
+                Value:
+                ${alarm.value ?? "--"}
+                • Started:
+                ${formatTime(alarm.startedAt)}
+              </div>
+
+            </div>
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+function renderEvents(data) {
+
+  const box =
+    document.getElementById(
+      "eventList"
+    );
+
+
+  if (!data.data.length) {
+
+    box.innerHTML =
+      `
+      <div class="empty">
+        ยังไม่มี Event
+      </div>
+      `;
+
+    return;
+
+  }
+
+
+  box.innerHTML =
+    data.data
+      .map(
+        event => {
+
+          const stateClass =
+            event.type === "CLEARED"
+              ? "event-cleared"
+              : "event-active";
+
+
+          const level =
+            event.type === "CLEARED"
+              ? "level-info"
+              : "level-warning";
+
+
+          return `
+            <div
+              class="event-item ${stateClass}"
+            >
+
+              <div class="item-top">
+
+                <div class="code">
+                  ${event.code}
+                </div>
+
+                <div
+                  class="level-badge ${level}"
+                >
+                  ${event.type}
+                </div>
+
+              </div>
+
+              <div class="message">
+                ${event.message}
+              </div>
+
+              <div class="meta">
+                ${formatTime(event.timestamp)}
+                • Value:
+                ${event.value ?? "--"}
+              </div>
+
+            </div>
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+async function loadAlarmCenter() {
+
+  try {
+
+    const [
+      alarmResponse,
+      eventResponse
+    ] =
+      await Promise.all([
+        fetch(
+          ALARM_API,
+          {
+            cache:
+              "no-store"
+          }
+        ),
+
+        fetch(
+          EVENT_API,
+          {
+            cache:
+              "no-store"
+          }
+        )
+      ]);
+
+
+    if (
+      !alarmResponse.ok ||
+      !eventResponse.ok
+    ) {
+
+      throw new Error(
+        "API ERROR"
+      );
+
+    }
+
+
+    const alarms =
+      await alarmResponse.json();
+
+
+    const events =
+      await eventResponse.json();
+
+
+    updateMainStatus(
+      alarms
+    );
+
+    renderAlarms(
+      alarms
+    );
+
+    renderEvents(
+      events
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    document.getElementById(
+      "mainStatus"
+    ).textContent =
+      "OFFLINE";
+
+
+    document.getElementById(
+      "alarmList"
+    ).innerHTML =
+      `
+      <div class="empty">
+        Alarm API Offline
+      </div>
+      `;
+
+  }
+
+}
+
+
+loadAlarmCenter();
+
+
+setInterval(
+  loadAlarmCenter,
+  3000
+);
+
+</script>
+
+
+</body>
+
+</html>

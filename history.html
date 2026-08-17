@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHA Solar History</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="history-body">
+<header>
+  <div class="brand">
+    <h1>📊 CHA SOLAR HISTORY</h1>
+    <p>Supabase • 1 minute history</p>
+  </div>
+  <div class="online" id="historyStatus"><span class="online-dot"></span>LOADING</div>
+</header>
+
+<main class="history-page">
+  <div class="history-topbar">
+    <div>
+      <div class="energy-kicker">HISTORY</div>
+      <h2>ข้อมูลพลังงานย้อนหลัง</h2>
+    </div>
+    <div class="history-last" id="historyLast">--</div>
+  </div>
+
+  <div class="history-tabs">
+    <button data-range="today" class="active">วันนี้</button>
+    <button data-range="24h">24 ชั่วโมง</button>
+    <button data-range="7d">7 วัน</button>
+  </div>
+
+  <section class="history-summary">
+    <div class="history-stat"><span>ข้อมูล</span><strong id="statRows">--</strong><small>records</small></div>
+    <div class="history-stat"><span>Load ล่าสุด</span><strong id="statLoad">--</strong><small>W</small></div>
+    <div class="history-stat"><span>Battery</span><strong id="statSoc">--</strong><small>%</small></div>
+    <div class="history-stat"><span>PV วันนี้</span><strong id="statPv">--</strong><small>kWh</small></div>
+  </section>
+
+  <section class="history-card">
+    <div class="chart-head"><div><b>🏠 Load Power</b><small>Consumer 2</small></div><span>W</span></div>
+    <div class="chart-wrap"><canvas id="loadChart"></canvas></div>
+  </section>
+
+  <section class="history-card">
+    <div class="chart-head"><div><b>🔋 Battery SOC</b><small>State of charge</small></div><span>%</span></div>
+    <div class="chart-wrap"><canvas id="socChart"></canvas></div>
+  </section>
+
+  <section class="history-card">
+    <div class="chart-head"><div><b>⚡ Grid</b><small>Voltage / Current</small></div><span>V / A</span></div>
+    <div class="chart-wrap"><canvas id="gridChart"></canvas></div>
+  </section>
+
+  <section class="history-card">
+    <div class="chart-head"><div><b>🌡 Inverter Temperature</b><small>SRNE inverter</small></div><span>°C</span></div>
+    <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+  </section>
+</main>
+
+<nav class="cha-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Overview</a>
+  <a href="history.html" class="active"><span class="nav-icon">📊</span>History</a>
+  <a href="alarms.html"><span class="nav-icon">🔔</span>Alarms</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="history.js"></script>
+</body>
+</html>

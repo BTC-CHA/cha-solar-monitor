@@ -1,0 +1,8 @@
+{
+  "name": "CHA Solar Monitor",
+  "short_name": "CHA Solar",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#f7f8fc"
+}

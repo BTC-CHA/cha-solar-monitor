@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>CHA Solar Monitor</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <style>
+
+    /* =====================================================
+       CHA NAVIGATION
+    ===================================================== */
+
+    body {
+      padding-bottom: 78px;
+    }
+
+    .cha-nav {
+      position: fixed;
+
+      left: 50%;
+      bottom: 14px;
+
+      transform:
+        translateX(-50%);
+
+      width:
+        calc(100% - 28px);
+
+      max-width: 520px;
+
+      height: 62px;
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
+      align-items: center;
+
+      padding: 6px;
+
+      z-index: 1000;
+
+      border:
+        1px solid
+        rgba(220, 225, 234, 0.95);
+
+      border-radius: 22px;
+
+      background:
+        rgba(255, 255, 255, 0.92);
+
+      backdrop-filter:
+        blur(16px);
+
+      box-shadow:
+        0 10px 30px
+        rgba(68, 82, 103, 0.13);
+    }
+
+
+    .cha-nav a {
+      position: relative;
+
+      height: 48px;
+
+      display: flex;
+
+      flex-direction: column;
+
+      justify-content: center;
+      align-items: center;
+
+      gap: 2px;
+
+      border-radius: 16px;
+
+      color: #919baa;
+
+      text-decoration: none;
+
+      font-size: 9px;
+      font-weight: 700;
+
+      transition:
+        0.2s ease;
+    }
+
+
+    .cha-nav a.active {
+      color: #569c84;
+
+      background:
+        #edf8f4;
+    }
+
+
+    .nav-icon {
+      font-size: 20px;
+
+      line-height: 1;
+    }
+
+
+    .alarm-badge {
+      position: absolute;
+
+      top: 3px;
+      right:
+        calc(50% - 27px);
+
+      min-width: 17px;
+      height: 17px;
+
+      display: none;
+
+      align-items: center;
+      justify-content: center;
+
+      padding: 0 5px;
+
+      border-radius: 999px;
+
+      color: white;
+
+      background: #df7777;
+
+      border:
+        2px solid white;
+
+      font-size: 8px;
+      font-weight: 800;
+
+      line-height: 1;
+    }
+
+
+    .alarm-badge.show {
+      display: flex;
+    }
+
+
+    .alarm-badge.warning {
+      background: #e0a84e;
+    }
+
+
+    .alarm-badge.critical {
+      background: #df7777;
+    }
+
+
+    @media (min-width: 1000px) {
+
+      body {
+        padding-bottom: 90px;
+      }
+
+
+      .cha-nav {
+        bottom: 18px;
+
+        max-width: 390px;
+      }
+
+
+      .cha-nav a {
+        font-size: 10px;
+      }
+
+    }
+
+  </style>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f7f8fc">
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header>
+
+  <div class="brand">
+
+    <h1>
+      ☀ CHA SOLAR MONITOR
+    </h1>
+
+    <p>
+      Home Energy Management System
+    </p>
+
+  </div>
+
+
+  <div class="online">
+
+    <span class="online-dot"></span>
+
+    SYSTEM ONLINE
+
+  </div>
+
+</header>
+
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main>
+
+<section class="mobile-flow">
+  <div class="mf-title"><div><small>CHA SOLAR</small><h2>Energy Flow</h2></div><div id="mobileSource" class="mobile-source">LIVE</div></div>
+  <div class="flow-stage">
+    <svg class="flow-svg" viewBox="0 0 360 520" preserveAspectRatio="none">
+      <path class="ef solar" d="M180 108 V176"/>
+      <path class="ef grid" d="M103 238 H139"/>
+      <path class="ef home" d="M221 238 H257"/>
+      <path class="ef bat" d="M180 300 V378"/>
+      <path class="ef c1" d="M58 292 V374"/>
+      <path class="ef c2" d="M302 292 V374"/>
+    </svg>
+    <div class="fn pv"><i>☀️</i><b>SOLAR</b><strong><span id="mPvPower">0</span><small> W</small></strong><em><span id="mPvVoltage">0.0</span>V · <span id="mPvCurrent">0.0</span>A</em></div>
+    <div class="fn gridn"><i>⚡</i><b>GRID</b><strong><span id="mGridVoltage">0.0</span><small> V</small></strong><em><span id="mGridCurrent">0.0</span>A · <span id="mGridFrequency">0.00</span>Hz</em></div>
+    <div class="fn iv"><i>⚡</i><b>IV</b><strong id="mInvMode">ONLINE</strong><em>LOAD <span id="mLoadPercent">0</span>% · <span id="mInvTemp">0.0°C</span></em></div>
+    <div class="fn c2n"><i>🏠</i><b>CONSUMER 2</b><strong><span id="mLoadPower">0</span><small> W</small></strong><em><span id="mLoadCurrent">0.0</span>A</em></div>
+    <div class="fn c1n"><i>🏭</i><b>CONSUMER 1</b><strong>--<small> W</small></strong><em>CT WAITING</em></div>
+    <div class="fn battery"><i>🔋</i><b>BATTERY</b><strong><span id="mBatterySOC">0</span><small>%</small></strong><em><span id="mBatteryVoltage">0.0</span>V · <span id="mBatteryCurrent">0.0</span>A</em></div>
+    <div class="sub mc">⚙️<b>M/C</b><small>CNC · Air Comp.</small></div>
+    <div class="sub house">🏡<b>HOME</b><small>House load</small></div>
+  </div>
+  <div class="flow-note">● จุดสว่างบนเส้นแสดงทิศทางการไหลของพลังงาน</div>
+</section>
+<section class="energy-map">
+
+
+  <!-- ===================================================
+       POWER FLOW
+  ==================================================== -->
+
+  <svg
+    class="power-svg"
+    viewBox="0 0 100 100"
+    preserveAspectRatio="none"
+  >
+
+
+    <!-- SOLAR -> INVERTER -->
+
+    <path
+      id="solarPath"
+      class="flow solar-flow"
+
+      d="
+        M 19 18
+        H 32
+        Q 35 18 35 21
+        V 37
+        Q 35 40 38 40
+        H 40
+      "
+    />
+
+
+    <!-- GRID -> JUNCTION -->
+
+    <path
+      id="gridMainPath"
+      class="flow grid-flow"
+
+      d="
+        M 19 49
+        H 31
+      "
+    />
+
+
+    <!-- JUNCTION -> INVERTER -->
+
+    <path
+      id="gridInvPath"
+      class="flow grid-flow"
+
+      d="
+        M 31 49
+        H 40
+      "
+    />
+
+
+    <!-- JUNCTION -> CONSUMER 1 -->
+
+    <path
+      id="gridC1Path"
+      class="flow consumer1-flow"
+
+      d="
+        M 31 49
+        V 74
+        Q 31 78 27 78
+        H 19
+      "
+    />
+
+
+    <!-- INVERTER -> CONSUMER 2 -->
+
+    <path
+      id="consumer2Path"
+      class="flow consumer2-flow"
+
+      d="
+        M 60 43
+        H 69
+        Q 73 43 73 39
+        V 31
+        Q 73 27 77 27
+        H 81
+      "
+    />
+
+
+    <!-- INVERTER <-> BATTERY -->
+
+    <path
+      id="batteryPath"
+      class="flow battery-flow"
+
+      d="
+        M 60 62
+        H 72
+        Q 76 62 76 66
+        V 74
+        Q 76 78 80 78
+        H 81
+      "
+    />
+
+
+    <circle
+      class="junction"
+      cx="31"
+      cy="49"
+      r="0.65"
+    />
+
+
+  </svg>
+
+
+
+  <!-- ===================================================
+       SOLAR
+  ==================================================== -->
+
+  <div class="node solar-node">
+
+    <div class="source-badge">
+      ESP32
+    </div>
+
+    <div class="node-icon">
+      ☀️
+    </div>
+
+    <div class="node-title">
+      SOLAR
+    </div>
+
+    <div
+      class="
+        node-value
+        main-reading
+        solar-color
+      "
+    >
+
+      <span id="pvPower">
+        0
+      </span>
+
+      <small>
+        W
+      </small>
+
+    </div>
+
+
+    <div
+      class="
+        node-info
+        electrical-reading
+      "
+    >
+
+      <span id="pvVoltage">
+        0.0
+      </span>
+
+      V
+
+      <span class="separator">
+        •
+      </span>
+
+      <span id="pvCurrent">
+        0.0
+      </span>
+
+      A
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ===================================================
+       GRID
+  ==================================================== -->
+
+  <div class="node grid-node">
+
+    <div class="node-icon">
+      ⚡
+    </div>
+
+    <div class="node-title">
+      GRID
+    </div>
+
+    <div
+      class="
+        node-value
+        main-reading
+        grid-color
+      "
+    >
+
+      <span id="gridVoltage">
+        0.0
+      </span>
+
+      <small>
+        V
+      </small>
+
+    </div>
+
+
+    <div
+      class="
+        node-info
+        electrical-reading
+      "
+    >
+
+      <span id="gridCurrent">
+        0.0
+      </span>
+
+      A
+
+      <span class="separator">
+        •
+      </span>
+
+      <span id="gridFrequency">
+        0.00
+      </span>
+
+      Hz
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ===================================================
+       CONSUMER 1
+  ==================================================== -->
+
+  <div class="node consumer1-node">
+
+    <div
+      class="
+        source-badge
+        waiting
+      "
+    >
+      CT WAITING
+    </div>
+
+    <div class="node-icon">
+      🏭
+    </div>
+
+    <div class="node-title">
+      CONSUMER 1
+    </div>
+
+    <div
+      class="
+        node-value
+        main-reading
+        consumer1-color
+      "
+    >
+
+      <span id="consumer1Power">
+        --
+      </span>
+
+      <small>
+        W
+      </small>
+
+    </div>
+
+
+    <div
+      class="
+        node-info
+        electrical-reading
+      "
+    >
+
+      <span id="consumer1Current">
+        --
+      </span>
+
+      A
+
+    </div>
+
+
+    <div
+      class="
+        node-info
+        secondary
+      "
+    >
+
+      CNC • Air Compressor
+
+      <br>
+
+      Water Heater
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ===================================================
+       INVERTER
+  ==================================================== -->
+
+  <div class="node inverter-node">
+
+    <div class="node-icon">
+      ⚡
+    </div>
+
+    <div class="node-title">
+      INVERTER
+    </div>
+
+
+    <div class="inverter-machine">
+
+      <div class="inverter-screen">
+        CHA
+      </div>
+
+      <div class="inverter-machine-name">
+        INVERTER
+      </div>
+
+    </div>
+
+
+    <div
+      id="inverterMode"
+      class="inverter-mode"
+    >
+      MAINS OPERATION
+    </div>
+
+
+    <div class="inverter-details">
+
+      <span>
+
+        <b id="inverterVoltage">
+          231.2
+        </b>
+
+        V
+
+      </span>
+
+
+      <span>
+
+        <b id="inverterCurrent">
+          3.5
+        </b>
+
+        A
+
+      </span>
+
+    </div>
+
+
+    <div class="inverter-status-row">
+
+      <div class="inverter-load">
+
+        LOAD
+
+        <strong>
+
+          <span id="loadPercent">
+            0
+          </span>
+
+          %
+
+        </strong>
+
+      </div>
+
+
+      <div class="inverter-temp">
+
+        🌡
+
+        <strong>
+
+          <span id="inverterTemperature">
+            39.5
+          </span>
+
+          °C
+
+        </strong>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ===================================================
+       CONSUMER 2
+  ==================================================== -->
+
+  <div class="node consumer2-node">
+
+    <div class="source-badge">
+      INVERTER
+    </div>
+
+    <div class="node-icon">
+      🏠
+    </div>
+
+    <div class="node-title">
+      CONSUMER 2
+    </div>
+
+    <div
+      class="
+        node-value
+        main-reading
+        consumer2-color
+      "
+    >
+
+      <span id="loadPower">
+        0
+      </span>
+
+      <small>
+        W
+      </small>
+
+    </div>
+
+
+    <div
+      class="
+        node-info
+        electrical-reading
+      "
+    >
+
+      <span id="loadCurrent">
+        0.0
+      </span>
+
+      A
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ===================================================
+       BATTERY
+  ==================================================== -->
+
+  <div class="node battery-node">
+
+    <div class="source-badge">
+      ESP32
+    </div>
+
+    <div class="node-icon">
+      🔋
+    </div>
+
+    <div class="node-title">
+      BATTERY
+    </div>
+
+    <div
+      class="
+        node-value
+        main-reading
+        battery-color
+      "
+    >
+
+      <span id="batterySOC">
+        0
+      </span>
+
+      <small>
+        %
+      </small>
+
+    </div>
+
+
+    <div
+      class="
+        node-info
+        electrical-reading
+      "
+    >
+
+      <span id="batteryVoltage">
+        0.0
+      </span>
+
+      V
+
+      <span class="separator">
+        •
+      </span>
+
+      <span id="batteryCurrent">
+        0.0
+      </span>
+
+      A
+
+    </div>
+
+
+    <div
+      id="batteryState"
+      class="battery-state"
+    >
+      ↔ STANDBY
+    </div>
+
+  </div>
+
+
+
+  <!-- ===================================================
+       FLOW LABELS
+  ==================================================== -->
+
+  <div
+    class="
+      flow-label
+      solar-label
+    "
+  >
+
+    <span id="solarFlowValue">
+      0
+    </span>
+
+    W →
+
+  </div>
+  <div
+    class="
+      flow-label
+      consumer2-label
+    "
+  >
+
+    <span id="consumer2FlowValue">
+      0
+    </span>
+
+    W →
+
+  </div>
+
+
+  <div
+    id="batteryDirection"
+    class="
+      flow-label
+      battery-label
+    "
+  >
+    ↔
+  </div>
+
+
+</section>
+
+
+</main>
+
+
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
+
+<section class="energy-section" id="energySection">
+  <div class="energy-heading">
+    <div>
+      <div class="energy-kicker">ENERGY</div>
+      <h2>พลังงานวันนี้</h2>
+    </div>
+    <div class="energy-status" id="energyStatus">กำลังอ่านข้อมูล...</div>
+  </div>
+
+  <div class="energy-grid">
+    <div class="energy-card">
+      <div class="energy-icon">☀️</div>
+      <div class="energy-label">Solar วันนี้</div>
+      <div class="energy-value"><span id="energyPvToday">--</span><small>kWh</small></div>
+    </div>
+
+    <div class="energy-card">
+      <div class="energy-icon">🏠</div>
+      <div class="energy-label">Load วันนี้</div>
+      <div class="energy-value"><span id="energyLoadToday">--</span><small>kWh</small></div>
+    </div>
+
+    <div class="energy-card">
+      <div class="energy-icon">⚡</div>
+      <div class="energy-label">Grid → Load วันนี้</div>
+      <div class="energy-value"><span id="energyGridToday">--</span><small>kWh</small></div>
+    </div>
+
+    <div class="energy-card">
+      <div class="energy-icon">🔋</div>
+      <div class="energy-label">Battery Charge</div>
+      <div class="energy-value"><span id="energyBattCharge">--</span><small>Ah</small></div>
+    </div>
+
+    <div class="energy-card">
+      <div class="energy-icon">🔋</div>
+      <div class="energy-label">Battery Discharge</div>
+      <div class="energy-value"><span id="energyBattDischarge">--</span><small>Ah</small></div>
+    </div>
+  </div>
+
+  <div class="energy-total">
+    <div class="energy-total-title">สะสมทั้งหมด</div>
+    <div class="energy-total-row">
+      <div>
+        <span class="total-label">Solar ผลิตสะสม</span>
+        <strong><span id="energyPvTotal">--</span> kWh</strong>
+      </div>
+      <div>
+        <span class="total-label">Load ใช้สะสม</span>
+        <strong><span id="energyLoadTotal">--</span> kWh</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-note">
+    กราฟรายชั่วโมง / วัน / เดือน จะเริ่มแสดงหลังระบบ History เริ่มเก็บข้อมูลจริง
+  </div>
+</section>
+
+<footer>
+
+  CHA Solar Energy Monitoring System
+
+  <span>
+    •
+  </span>
+
+  ESP32 Gateway
+
+  <span>
+    •
+  </span>
+
+  Realtime
+
+</footer>
+
+
+
+<!-- =====================================================
+     BOTTOM NAVIGATION
+===================================================== -->
+
+<nav class="cha-nav">
+
+
+  <a
+    href="index.html"
+    class="active"
+  >
+
+    <span class="nav-icon">
+      🏠
+    </span>
+
+    Overview
+
+  </a>
+
+
+  <a
+    href="history.html"
+  >
+
+    <span class="nav-icon">
+      📊
+    </span>
+
+    History
+
+  </a>
+
+
+  <a
+    href="alarms.html"
+  >
+
+    <span
+      id="alarmBadge"
+      class="alarm-badge"
+    >
+      0
+    </span>
+
+    <span class="nav-icon">
+      🔔
+    </span>
+
+    Alarms
+
+  </a>
+
+
+</nav>
+
+
+
+<!-- =====================================================
+     MAIN DASHBOARD SCRIPT
+===================================================== -->
+
+<script src="script.js"></script>
+
+
+
+<!-- =====================================================
+     ALARM BADGE
+===================================================== -->
+
+<script>
+
+const CHA_SERVER =
+  `${location.protocol}//${location.hostname}:3000`;
+
+
+async function updateAlarmBadge() {
+
+  const badge =
+    document.getElementById(
+      "alarmBadge"
+    );
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${CHA_SERVER}/api/alarms`,
+        {
+          cache:
+            "no-store"
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Alarm API Error"
+      );
+
+    }
+
+
+    const data =
+      await response.json();
+
+
+    badge.classList.remove(
+      "show",
+      "warning",
+      "critical"
+    );
+
+
+    if (data.active <= 0) {
+
+      badge.textContent =
+        "0";
+
+      return;
+
+    }
+
+
+    badge.textContent =
+      data.active > 99
+        ? "99+"
+        : data.active;
+
+
+    badge.classList.add(
+      "show"
+    );
+
+
+    if (data.critical > 0) {
+
+      badge.classList.add(
+        "critical"
+      );
+
+    }
+
+    else {
+
+      badge.classList.add(
+        "warning"
+      );
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.warn(
+      "Alarm API Offline"
+    );
+
+    badge.classList.remove(
+      "show"
+    );
+
+  }
+
+}
+
+
+updateAlarmBadge();
+
+
+setInterval(
+  updateAlarmBadge,
+  3000
+);
+
+</script>
+
+
+</body>
+
+</html>
