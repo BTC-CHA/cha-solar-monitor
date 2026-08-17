@@ -5,6 +5,28 @@ function setMobileFlow(lineId, particlesId, active) {
   if (particles) particles.classList.toggle("active", active);
 }
 
+function setMobileFlowText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
+}
+
+function getMobilePowerSource(data) {
+  const solarActive = Number(data.pvPower) > 30;
+  const gridActive = Number(data.gridCurrent) > 0.25;
+  const batteryDischarging = Number(data.batteryCurrent) < -1;
+
+  if (gridActive && (solarActive || batteryDischarging)) {
+    return { label: solarActive ? "GRID + SOLAR" : "GRID + BATTERY", tone: "mixed" };
+  }
+  if (gridActive) return { label: "GRID MODE", tone: "grid" };
+  if (solarActive && batteryDischarging) {
+    return { label: "SOLAR + BATTERY", tone: "mixed" };
+  }
+  if (solarActive) return { label: "SOLAR MODE", tone: "solar" };
+  if (batteryDischarging) return { label: "BATTERY MODE", tone: "battery" };
+  return { label: "STANDBY", tone: "mixed" };
+}
+
 function updateMobileFlow(data) {
   const solarActive = data.pvPower > 10;
   const gridActive = data.gridCurrent > 0.1;
@@ -12,6 +34,8 @@ function updateMobileFlow(data) {
   const consumer1Active =
     data.consumer1Power > 10 || data.consumer1Current > 0.1;
   const batteryActive = Math.abs(data.batteryCurrent) > 0.2;
+  const batteryPower = Math.abs(Number(data.batteryVoltage) * Number(data.batteryCurrent));
+  const source = getMobilePowerSource(data);
 
   setMobileFlow("mobileSolarPath", "mobileSolarParticles", solarActive);
   setMobileFlow("mobileGridC1Path", "mobileGridC1Particles", gridActive || consumer1Active);
@@ -20,6 +44,35 @@ function updateMobileFlow(data) {
   setMobileFlow("mobileMcPath", "mobileMcParticles", consumer1Active);
   setMobileFlow("mobileHomePath", "mobileHomeParticles", loadActive);
   setMobileFlow("mobileBatteryPath", "mobileBatteryParticles", batteryActive);
+
+  setMobileFlowText("flowSolarValue", `${Math.round(Number(data.pvPower))}W`);
+  setMobileFlowText(
+    "flowGridMainValue",
+    gridActive ? `≥${Number(data.gridCurrent).toFixed(1)}A` : "0A"
+  );
+  setMobileFlowText(
+    "flowGridIvValue",
+    gridActive ? `${Number(data.gridCurrent).toFixed(1)}A` : "0A"
+  );
+  setMobileFlowText("flowLoadValue", `${Math.round(Number(data.loadPower))}W`);
+  setMobileFlowText("flowMachineValue", consumer1Active ? "M/C LIVE" : "CT");
+  setMobileFlowText(
+    "flowBatteryValue",
+    `${data.batteryCurrent > 0.2 ? "↓" : data.batteryCurrent < -0.2 ? "↑" : "↔"} ${Math.round(batteryPower)}W`
+  );
+  setMobileFlowText("flowHomeValue", `${Math.round(Number(data.loadPower))}W`);
+
+  const inverterNode = document.querySelector(".fn.iv");
+  if (inverterNode) {
+    inverterNode.classList.remove(
+      "source-grid",
+      "source-solar",
+      "source-battery",
+      "source-mixed"
+    );
+    inverterNode.classList.add(`source-${source.tone}`);
+  }
+  setMobileFlowText("mInvMode", source.label);
 
   // Positive current = charging (IV to battery); negative = discharging.
   const batteryPath = document.getElementById("mobileBatteryPath");
