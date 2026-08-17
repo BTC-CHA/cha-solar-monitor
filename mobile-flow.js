@@ -13,7 +13,8 @@ function setMobileFlowText(id, value) {
 function getMobilePowerSource(data) {
   const solarActive = Number(data.pvPower) > 30;
   const gridActive = Number(data.gridCurrent) > 0.25;
-  const batteryDischarging = Number(data.batteryCurrent) < -1;
+  // SRNE reports positive battery current while the battery supplies the IV.
+  const batteryDischarging = Number(data.batteryCurrent) > 1;
 
   if (gridActive && (solarActive || batteryDischarging)) {
     return { label: solarActive ? "GRID + SOLAR" : "GRID + BATTERY", tone: "mixed" };
@@ -58,7 +59,7 @@ function updateMobileFlow(data) {
   setMobileFlowText("flowMachineValue", consumer1Active ? "M/C LIVE" : "CT");
   setMobileFlowText(
     "flowBatteryValue",
-    `${data.batteryCurrent > 0.2 ? "↓" : data.batteryCurrent < -0.2 ? "↑" : "↔"} ${Math.round(batteryPower)}W`
+    `${data.batteryCurrent > 0.2 ? "↑" : data.batteryCurrent < -0.2 ? "↓" : "↔"} ${Math.round(batteryPower)}W`
   );
   setMobileFlowText("flowHomeValue", `${Math.round(Number(data.loadPower))}W`);
 
@@ -74,12 +75,12 @@ function updateMobileFlow(data) {
   }
   setMobileFlowText("mInvMode", source.label);
 
-  // Positive current = charging (IV to battery); negative = discharging.
+  // SRNE sign convention: positive = discharging, negative = charging.
   const batteryPath = document.getElementById("mobileBatteryPath");
   if (batteryPath) {
     batteryPath.setAttribute(
       "d",
-      data.batteryCurrent < -0.2 ? "M180 422 V319" : "M180 319 V422"
+      data.batteryCurrent > 0.2 ? "M180 422 V319" : "M180 319 V422"
     );
   }
 }
