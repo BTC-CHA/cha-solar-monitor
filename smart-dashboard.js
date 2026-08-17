@@ -58,6 +58,16 @@ function updateSmartOverview(data, source = "LIVE") {
     title = "มีพลังงาน Solar เหลือ";
     detail = `ผลิตมากกว่าโหลดประมาณ ${Math.round(data.pvPower - data.loadPower)}W`;
     tone = "solar";
+  } else if (
+    Number(data.gridCurrent) > 0.2 &&
+    Number(data.pvPower) < 50 &&
+    Number(data.batterySOC) > 25 &&
+    Math.abs(Number(data.batteryCurrent)) < 1 &&
+    Number(data.loadPower) > 100
+  ) {
+    title = "แบตยังเหลือ แต่ระบบกำลังใช้ Grid";
+    detail = `แบต ${Number(data.batterySOC).toFixed(0)}% (${Number(data.batteryVoltage).toFixed(1)}V) • ตรวจ Output Priority และจุดสลับ Grid/Battery`;
+    tone = "grid";
   } else if (Number(data.gridCurrent) > 0.2 && Number(data.pvPower) < 50) {
     title = "Grid กำลังรับโหลดหลัก";
     detail = `โหลดบ้าน ${Math.round(data.loadPower)}W • แบต ${Number(data.batteryCurrent).toFixed(1)}A`;
