@@ -52,6 +52,42 @@
       .homen { left: 85%; top: 85.2%; }
       .homen em, .mcn em { font-size: 6.5px; }
       .homen b, .mcn b { font-size: 9px; }
+
+      .mobile-flow-value {
+        position: absolute;
+        z-index: 3;
+        min-width: 34px;
+        padding: 3px 6px;
+        border: 1px solid rgba(218, 224, 233, .85);
+        border-radius: 999px;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, .88);
+        box-shadow: 0 3px 9px rgba(70, 84, 103, .08);
+        color: #7b8695;
+        font-size: 6.5px;
+        font-weight: 850;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .flow-solar-value { left: 50%; top: 32%; color: #b98e1c; }
+      .flow-grid-main-value { left: 15%; top: 32%; color: #7568b5; }
+      .flow-grid-iv-value { left: 32.5%; top: 50.9%; color: #7568b5; }
+      .flow-load-value { left: 67.5%; top: 50.9%; color: #c76f43; }
+      .flow-machine-value { left: 15%; top: 68.5%; color: #b57c25; }
+      .flow-battery-value { left: 50%; top: 68.5%; color: #388fa5; }
+      .flow-home-value { left: 85%; top: 68.5%; color: #c76f43; }
+
+      .fn.iv.source-grid { box-shadow: 0 7px 22px rgba(156, 142, 225, .28); }
+      .fn.iv.source-grid strong { color: #7568b5; }
+      .fn.iv.source-solar { box-shadow: 0 7px 22px rgba(229, 182, 56, .25); }
+      .fn.iv.source-solar strong { color: #b98e1c; }
+      .fn.iv.source-battery { box-shadow: 0 7px 22px rgba(85, 186, 208, .28); }
+      .fn.iv.source-battery strong { color: #388fa5; }
+      .fn.iv.source-mixed { box-shadow: 0 7px 22px rgba(86, 205, 181, .28); }
+      .fn.iv.source-mixed strong { color: #438f79; }
     }
   </style>
 
@@ -306,6 +342,13 @@
         <circle r="4"><animateMotion dur="1.35s" repeatCount="indefinite"><mpath href="#mobileMcPath"/></animateMotion></circle>
       </g>
     </svg>
+    <span id="flowSolarValue" class="mobile-flow-value flow-solar-value">0W</span>
+    <span id="flowGridMainValue" class="mobile-flow-value flow-grid-main-value">--</span>
+    <span id="flowGridIvValue" class="mobile-flow-value flow-grid-iv-value">--</span>
+    <span id="flowLoadValue" class="mobile-flow-value flow-load-value">0W</span>
+    <span id="flowMachineValue" class="mobile-flow-value flow-machine-value">CT</span>
+    <span id="flowBatteryValue" class="mobile-flow-value flow-battery-value">↔ 0W</span>
+    <span id="flowHomeValue" class="mobile-flow-value flow-home-value">0W</span>
     <div class="fn pv"><i>☀️</i><b>SOLAR</b><strong><span id="mPvPower">0</span><small> W</small></strong><em><span id="mPvVoltage">0.0</span>V · <span id="mPvCurrent">0.0</span>A</em></div>
     <div class="fn gridn"><i>⚡</i><b>GRID</b><strong><span id="mGridVoltage">0.0</span><small> V</small></strong><em><span id="mGridCurrent">0.0</span>A · <span id="mGridFrequency">0.00</span>Hz</em></div>
     <div class="fn iv"><i>⚡</i><b>IV</b><strong id="mInvMode">ONLINE</strong><em>LOAD <span id="mLoadPercent">0</span>% · <span id="mInvTemp">0.0°C</span></em></div>
