@@ -28,17 +28,20 @@
     <button data-range="today" class="active">วันนี้</button>
     <button data-range="24h">24 ชั่วโมง</button>
     <button data-range="7d">7 วัน</button>
+    <button data-range="30d">30 วัน</button>
   </div>
 
   <section class="history-summary">
     <div class="history-stat"><span>ข้อมูล</span><strong id="statRows">--</strong><small>records</small></div>
     <div class="history-stat"><span>Load ล่าสุด</span><strong id="statLoad">--</strong><small>W</small></div>
     <div class="history-stat"><span>Battery</span><strong id="statSoc">--</strong><small>%</small></div>
-    <div class="history-stat"><span>PV วันนี้</span><strong id="statPv">--</strong><small>kWh</small></div>
+    <div class="history-stat"><span>PV ช่วงที่เลือก</span><strong id="statPv">--</strong><small>kWh</small></div>
+    <div class="history-stat"><span>Load ช่วงที่เลือก</span><strong id="statLoadEnergy">--</strong><small>kWh</small></div>
+    <div class="history-stat"><span>Peak Load</span><strong id="statPeakLoad">--</strong><small>W</small></div>
   </section>
 
   <section class="history-card">
-    <div class="chart-head"><div><b>🏠 Load Power</b><small>Consumer 2</small></div><span>W</span></div>
+    <div class="chart-head"><div><b>☀️ Solar vs Load</b><small>พลังงานผลิตและการใช้ไฟ</small></div><span>W</span></div>
     <div class="chart-wrap"><canvas id="loadChart"></canvas></div>
   </section>
 
