@@ -278,6 +278,45 @@
   </div>
   <div class="flow-note">● จุดสว่างบนเส้นแสดงทิศทางการไหลของพลังงาน</div>
 </section>
+
+<section class="smart-overview" aria-labelledby="smartTitle">
+  <div class="smart-heading">
+    <div>
+      <div class="energy-kicker">SMART ENERGY</div>
+      <h2 id="smartTitle">สรุปอัจฉริยะ</h2>
+    </div>
+    <div id="lastUpdated" class="last-updated waiting">รอข้อมูลล่าสุด...</div>
+  </div>
+
+  <div class="smart-grid">
+    <article class="smart-card runtime-card">
+      <div class="smart-card-icon">🔋</div>
+      <div>
+        <span>แบตสำรองโหลดปัจจุบัน</span>
+        <strong id="batteryRuntime">--</strong>
+        <small id="batteryRuntimeDetail">51.2V • 100Ah • สำรอง 10%</small>
+      </div>
+    </article>
+
+    <article class="smart-card">
+      <div class="smart-card-icon">💸</div>
+      <span>ค่าไฟ Grid วันนี้</span>
+      <strong><span id="gridCostToday">--</span><small> บาท</small></strong>
+    </article>
+
+    <article class="smart-card">
+      <div class="smart-card-icon">☀️</div>
+      <span>Solar ช่วยประหยัด</span>
+      <strong><span id="solarSavingToday">--</span><small> บาท</small></strong>
+    </article>
+  </div>
+
+  <div class="smart-insight" id="smartInsight">
+    <span>💡</span>
+    <div><b>กำลังวิเคราะห์ระบบ</b><small>รอข้อมูลจาก Inverter</small></div>
+  </div>
+  <div class="smart-assumption">คำนวณเบื้องต้นจากแบต 5.12kWh • ประสิทธิภาพ 92% • ค่าไฟ 4.50 บาท/หน่วย</div>
+</section>
 <section class="energy-map">
 
 
@@ -1035,6 +1074,7 @@
 
 <script src="script.js"></script>
 <script src="mobile-flow.js"></script>
+<script src="smart-dashboard.js"></script>
 
 
 
