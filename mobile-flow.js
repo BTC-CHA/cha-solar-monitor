@@ -14,9 +14,9 @@ function updateMobileFlow(data) {
   const batteryActive = Math.abs(data.batteryCurrent) > 0.2;
 
   setMobileFlow("mobileSolarPath", "mobileSolarParticles", solarActive);
-  setMobileFlow("mobileGridIvPath", "mobileGridIvParticles", gridActive);
+  setMobileFlow("mobileGridC1Path", "mobileGridC1Particles", gridActive || consumer1Active);
+  setMobileFlow("mobileC1IvPath", "mobileC1IvParticles", gridActive);
   setMobileFlow("mobileIvC2Path", "mobileIvC2Particles", loadActive);
-  setMobileFlow("mobileGridC1Path", "mobileGridC1Particles", consumer1Active);
   setMobileFlow("mobileMcPath", "mobileMcParticles", consumer1Active);
   setMobileFlow("mobileHomePath", "mobileHomeParticles", loadActive);
   setMobileFlow("mobileBatteryPath", "mobileBatteryParticles", batteryActive);
@@ -26,7 +26,7 @@ function updateMobileFlow(data) {
   if (batteryPath) {
     batteryPath.setAttribute(
       "d",
-      data.batteryCurrent < -0.2 ? "M180 337 V278" : "M180 278 V337"
+      data.batteryCurrent < -0.2 ? "M180 422 V319" : "M180 319 V422"
     );
   }
 }
