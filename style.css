@@ -1688,6 +1688,91 @@ footer span {
   opacity: .48;
 }
 
+/* =========================================================
+   SMART OVERVIEW - V1.8
+========================================================= */
+.smart-overview {
+  max-width: 1100px;
+  margin: 18px auto 0;
+  padding: 22px;
+  border: 1px solid rgba(126,145,160,.12);
+  border-radius: 27px;
+  background: rgba(255,255,255,.76);
+  box-shadow: 0 14px 36px rgba(70,92,110,.08);
+}
+.smart-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.smart-heading h2 { margin: 3px 0 0; font-size: 22px; }
+.last-updated {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #7f8998;
+  background: #f1f3f6;
+}
+.last-updated.fresh { color: #4f9a80; background: #edf8f3; }
+.last-updated.stale { color: #b96060; background: #fff0f0; }
+.smart-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+}
+.smart-card {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255,255,255,.9);
+}
+.smart-card.runtime-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: linear-gradient(145deg,#fff,var(--battery-soft));
+}
+.smart-card-icon { font-size: 25px; }
+.smart-card > span,
+.smart-card > div > span { display:block; color:#7f8998; font-size:10px; font-weight:750; }
+.smart-card > strong,
+.smart-card > div > strong { display:block; margin-top:6px; color:#465264; font-size:22px; line-height:1.1; }
+.smart-card strong small { font-size:9px; color:#8d97a5; }
+.smart-card > div > small { display:block; margin-top:5px; color:#8d97a5; font-size:8px; font-weight:700; }
+.smart-insight {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 10px;
+  padding: 13px 15px;
+  border-radius: 17px;
+  background: #f3f7f6;
+  border: 1px solid rgba(86,205,181,.16);
+}
+.smart-insight > span { font-size:22px; }
+.smart-insight b { display:block; font-size:12px; }
+.smart-insight small { display:block; margin-top:3px; color:#7f8998; font-size:9px; }
+.smart-insight.warning { background:#fff7e7; border-color:rgba(224,168,78,.25); }
+.smart-insight.solar { background:#fff9e8; border-color:rgba(229,182,56,.25); }
+.smart-insight.grid { background:#f4f1fc; border-color:rgba(155,139,217,.22); }
+.smart-insight.battery { background:#edf9fb; border-color:rgba(85,186,208,.22); }
+.smart-assumption { margin-top:9px; text-align:center; color:#9aa4b2; font-size:8px; font-weight:650; }
+
+@media (max-width: 699px) {
+  .smart-overview { margin-top:12px; padding:15px; border-radius:22px; }
+  .smart-heading { align-items:flex-start; flex-direction:column; }
+  .smart-heading h2 { font-size:19px; }
+  .smart-grid { grid-template-columns:1fr 1fr; }
+  .runtime-card { grid-column:1 / -1; }
+  .smart-card { padding:13px; }
+  .smart-card > strong,
+  .smart-card > div > strong { font-size:19px; }
+}
+
 @media (max-width: 820px) {
   .energy-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1732,7 +1817,7 @@ footer span {
 .history-topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin:8px 0 14px; }
 .history-topbar h2 { margin:3px 0 0; }
 .history-last { color:var(--muted); font-size:11px; font-weight:700; }
-.history-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.history-summary { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:14px; }
 .history-stat { padding:14px; border:1px solid var(--border); border-radius:17px; background:rgba(255,255,255,.9); box-shadow:var(--shadow); }
 .history-stat span { display:block; color:var(--muted); font-size:10px; font-weight:700; }
 .history-stat strong { display:inline-block; margin-top:5px; font-size:23px; }
@@ -1751,6 +1836,9 @@ footer span {
   .history-stat strong { font-size:20px; }
   .history-card { padding:13px; border-radius:17px; }
   .chart-wrap { height:220px; }
+}
+@media (min-width:601px) and (max-width:1000px) {
+  .history-summary { grid-template-columns:repeat(3,1fr); }
 }
 
 /* =========================================================
