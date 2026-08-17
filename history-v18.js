@@ -1,189 +1,376 @@
 const SUPABASE_URL = "https://txnveztxwqjsclwwtile.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ITFDtjM2BXv0jwaQq7x0jw_rZEXlrTU";
+const DEVICE_ID = "cha-solar-gateway";
+const TARIFF_BAHT_PER_KWH = 4.5;
 
 let charts = {};
-let activeRange = "today";
+let activeRange = "day";
+let cursorKey = bangkokDateKey(new Date());
 
-function rangeStart(range) {
-  const now = new Date();
-  if (range === "today") {
-    // Thailand local midnight (+07:00), converted to UTC automatically.
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit"
-    }).formatToParts(now);
-    const get = t => parts.find(p => p.type === t)?.value;
-    return new Date(`${get("year")}-${get("month")}-${get("day")}T00:00:00+07:00`);
+function text(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
+}
+
+function bangkokDateKey(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type)?.value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function keyParts(key) {
+  const [year, month, day] = key.split("-").map(Number);
+  return { year, month, day };
+}
+
+function makeKey(year, month, day = 1) {
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftCursor(amount) {
+  const { year, month, day } = keyParts(cursorKey);
+  if (activeRange === "day") cursorKey = makeKey(year, month, day + amount);
+  if (activeRange === "month") cursorKey = makeKey(year, month + amount, 1);
+  if (activeRange === "year") cursorKey = makeKey(year + amount, 1, 1);
+}
+
+function periodBounds() {
+  const { year, month, day } = keyParts(cursorKey);
+  if (activeRange === "day") {
+    return { start: makeKey(year, month, day), end: makeKey(year, month, day + 1) };
   }
-  if (range === "7d") return new Date(Date.now() - 7 * 86400000);
-  if (range === "30d") return new Date(Date.now() - 30 * 86400000);
-  return new Date(Date.now() - 24 * 3600000);
+  if (activeRange === "month") {
+    return { start: makeKey(year, month, 1), end: makeKey(year, month + 1, 1) };
+  }
+  return { start: makeKey(year, 1, 1), end: makeKey(year + 1, 1, 1) };
 }
 
-function fmtTime(iso, range) {
-  const d = new Date(iso);
-  return new Intl.DateTimeFormat("th-TH", range === "7d" || range === "30d"
-    ? { timeZone:"Asia/Bangkok", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }
-    : { timeZone:"Asia/Bangkok", hour:"2-digit", minute:"2-digit" }
-  ).format(d);
+function isCurrentPeriod() {
+  const today = bangkokDateKey(new Date());
+  const now = keyParts(today);
+  const cursor = keyParts(cursorKey);
+  if (activeRange === "day") return cursorKey >= today;
+  if (activeRange === "month") {
+    return cursor.year > now.year || (cursor.year === now.year && cursor.month >= now.month);
+  }
+  return cursor.year >= now.year;
 }
 
-function decimate(rows, maxPoints=500) {
-  if (rows.length <= maxPoints) return rows;
-  const step = Math.ceil(rows.length / maxPoints);
-  return rows.filter((_, i) => i % step === 0 || i === rows.length - 1);
+function periodTitle() {
+  const { year, month, day } = keyParts(cursorKey);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  if (activeRange === "day") {
+    return new Intl.DateTimeFormat("th-TH", {
+      timeZone: "Asia/Bangkok", day: "numeric", month: "long", year: "numeric"
+    }).format(date);
+  }
+  if (activeRange === "month") {
+    return new Intl.DateTimeFormat("th-TH", {
+      timeZone: "Asia/Bangkok", month: "long", year: "numeric"
+    }).format(date);
+  }
+  return `ปี ${year + 543}`;
 }
 
-async function fetchHistory(range) {
-  const start = rangeStart(range).toISOString();
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: { apikey: SUPABASE_KEY },
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(`Supabase HTTP ${response.status}`);
+  return response.json();
+}
+
+async function fetchDailySummaries(start, end) {
   const select = [
-    "recorded_at","load_power_w","battery_soc","grid_voltage","grid_current",
-    "temp_inverter","pv_today_kwh","solar_power_w","device_id"
+    "energy_date", "solar_kwh", "load_kwh", "grid_kwh", "grid_is_estimated",
+    "battery_charge_ah", "battery_discharge_ah", "peak_load_w",
+    "last_battery_soc", "sample_count"
   ].join(",");
-  const url = `${SUPABASE_URL}/rest/v1/solar_history?select=${select}` +
-    `&device_id=eq.cha-solar-gateway&recorded_at=gte.${encodeURIComponent(start)}` +
-    `&order=recorded_at.asc`;
+  const url = `${SUPABASE_URL}/rest/v1/solar_history_daily?select=${select}` +
+    `&device_id=eq.${DEVICE_ID}&energy_date=gte.${start}&energy_date=lt.${end}` +
+    "&order=energy_date.asc";
+  return fetchJson(url);
+}
 
+async function fetchDaySamples(start, end) {
+  const select = [
+    "recorded_at", "solar_power_w", "load_power_w", "grid_power_w",
+    "grid_voltage", "grid_current", "battery_current", "battery_soc"
+  ].join(",");
+  const base = `${SUPABASE_URL}/rest/v1/solar_history?select=${select}` +
+    `&device_id=eq.${DEVICE_ID}` +
+    `&recorded_at=gte.${encodeURIComponent(start + "T00:00:00+07:00")}` +
+    `&recorded_at=lt.${encodeURIComponent(end + "T00:00:00+07:00")}` +
+    "&order=recorded_at.asc";
   const rows = [];
-  const pageSize = 1000;
-  const maxRows = range === "30d" ? 45000 : range === "7d" ? 11000 : 2500;
-  for (let offset = 0; offset < maxRows; offset += pageSize) {
-    const res = await fetch(`${url}&limit=${pageSize}&offset=${offset}`, {
-      headers: { "apikey": SUPABASE_KEY },
-      cache: "no-store"
-    });
-    if (!res.ok) throw new Error(`Supabase HTTP ${res.status}`);
-    const page = await res.json();
+  for (let offset = 0; offset < 3000; offset += 1000) {
+    const page = await fetchJson(`${base}&limit=1000&offset=${offset}`);
     rows.push(...page);
-    if (page.length < pageSize) break;
+    if (page.length < 1000) break;
   }
   return rows;
 }
 
-function integrateKwh(rows, key) {
-  let wh = 0;
-  for (let i = 1; i < rows.length; i += 1) {
-    const dtHours = (new Date(rows[i].recorded_at) - new Date(rows[i - 1].recorded_at)) / 3600000;
-    if (dtHours <= 0 || dtHours > 5 / 60) continue;
-    const p1 = Number(rows[i - 1][key] ?? 0);
-    const p2 = Number(rows[i][key] ?? 0);
-    wh += (p1 + p2) / 2 * dtHours;
-  }
-  return wh / 1000;
+function hourLabel(iso) {
+  return new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok", hour: "2-digit", hour12: false
+  }).format(new Date(iso)) + ":00";
 }
 
-function chartOptions(unit, min, max) {
+function hourlyBuckets(rows) {
+  const buckets = new Map();
+  rows.forEach(row => {
+    const label = hourLabel(row.recorded_at);
+    if (!buckets.has(label)) {
+      buckets.set(label, {
+        label, solar_kwh: 0, load_kwh: 0, grid_kwh: 0,
+        battery_charge_ah: 0, battery_discharge_ah: 0,
+        peak_load_w: 0, last_battery_soc: 0, grid_is_estimated: false
+      });
+    }
+    const bucket = buckets.get(label);
+    bucket.peak_load_w = Math.max(bucket.peak_load_w, Number(row.load_power_w || 0));
+    bucket.last_battery_soc = Number(row.battery_soc || 0);
+  });
+
+  for (let index = 1; index < rows.length; index += 1) {
+    const current = rows[index];
+    const previous = rows[index - 1];
+    const dt = (new Date(current.recorded_at) - new Date(previous.recorded_at)) / 3600000;
+    if (dt <= 0 || dt > 5 / 60) continue;
+    const bucket = buckets.get(hourLabel(current.recorded_at));
+    const solar = Math.max(0, Number(current.solar_power_w || 0));
+    const load = Math.max(0, Number(current.load_power_w || 0));
+    const gridMeasured = current.grid_power_w === null ? NaN : Number(current.grid_power_w);
+    const grid = Number.isFinite(gridMeasured)
+      ? Math.max(0, gridMeasured)
+      : Math.max(0, Number(current.grid_voltage || 0) * Number(current.grid_current || 0));
+    const battery = Number(current.battery_current || 0);
+    bucket.solar_kwh += solar * dt / 1000;
+    bucket.load_kwh += load * dt / 1000;
+    bucket.grid_kwh += grid * dt / 1000;
+    bucket.grid_is_estimated ||= !Number.isFinite(gridMeasured);
+    if (battery < 0) bucket.battery_charge_ah += -battery * dt;
+    if (battery > 0) bucket.battery_discharge_ah += battery * dt;
+  }
+  return [...buckets.values()];
+}
+
+function dailyBuckets(rows) {
+  return rows.map(row => ({
+    ...row,
+    label: new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" })
+      .format(new Date(row.energy_date + "T12:00:00+07:00"))
+  }));
+}
+
+function monthlyBuckets(rows) {
+  const months = new Map();
+  rows.forEach(row => {
+    const month = Number(row.energy_date.slice(5, 7));
+    if (!months.has(month)) {
+      const label = new Intl.DateTimeFormat("th-TH", { month: "short" })
+        .format(new Date(`2026-${String(month).padStart(2, "0")}-01T12:00:00+07:00`));
+      months.set(month, {
+        label, solar_kwh: 0, load_kwh: 0, grid_kwh: 0,
+        battery_charge_ah: 0, battery_discharge_ah: 0,
+        peak_load_w: 0, last_battery_soc: 0, grid_is_estimated: false
+      });
+    }
+    const bucket = months.get(month);
+    ["solar_kwh", "load_kwh", "grid_kwh", "battery_charge_ah", "battery_discharge_ah"]
+      .forEach(key => { bucket[key] += Number(row[key] || 0); });
+    bucket.peak_load_w = Math.max(bucket.peak_load_w, Number(row.peak_load_w || 0));
+    bucket.last_battery_soc = Number(row.last_battery_soc || 0);
+    bucket.grid_is_estimated ||= Boolean(row.grid_is_estimated);
+  });
+  return [...months.values()];
+}
+
+function totals(rows) {
+  const result = {
+    solar: 0, load: 0, grid: 0, charge: 0, discharge: 0,
+    peak: 0, samples: 0, estimated: false
+  };
+  rows.forEach(row => {
+    result.solar += Number(row.solar_kwh || 0);
+    result.load += Number(row.load_kwh || 0);
+    result.grid += Number(row.grid_kwh || 0);
+    result.charge += Number(row.battery_charge_ah || 0);
+    result.discharge += Number(row.battery_discharge_ah || 0);
+    result.peak = Math.max(result.peak, Number(row.peak_load_w || 0));
+    result.samples += Number(row.sample_count || 0);
+    result.estimated ||= Boolean(row.grid_is_estimated);
+  });
+  return result;
+}
+
+function chartBase() {
   return {
-    responsive: true, maintainAspectRatio: false, animation: false,
-    interaction: { mode:"index", intersect:false },
-    plugins: { legend:{ display:false }, tooltip:{ displayColors:false } },
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 280 },
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { labels: { usePointStyle: true, boxWidth: 8, color: "#6f7a8a" } },
+      tooltip: { displayColors: true }
+    },
     scales: {
-      x: { ticks:{ maxTicksLimit:7, color:"#8b96a6" }, grid:{ display:false } },
-      y: {
-        beginAtZero: min === 0, suggestedMin:min, suggestedMax:max,
-        ticks:{ color:"#8b96a6", callback:v => `${v}${unit}` },
-        grid:{ color:"rgba(120,135,155,.10)" }
-      }
+      x: { grid: { display: false }, ticks: { color: "#8b96a6", maxTicksLimit: 12 } },
+      y: { beginAtZero: true, grid: { color: "rgba(120,135,155,.10)" }, ticks: { color: "#8b96a6" } }
     }
   };
 }
 
-function makeChart(id, labels, datasets, options) {
+function makeChart(id, config) {
   if (charts[id]) charts[id].destroy();
-  charts[id] = new Chart(document.getElementById(id), {
-    type:"line",
-    data:{ labels, datasets },
-    options
+  charts[id] = new Chart(document.getElementById(id), config);
+}
+
+function renderCharts(buckets) {
+  const labels = buckets.map(row => row.label);
+  const rounded = key => buckets.map(row => Number(Number(row[key] || 0).toFixed(3)));
+
+  makeChart("energyChart", {
+    type: "bar",
+    data: { labels, datasets: [
+      { label: "Solar", data: rounded("solar_kwh"), backgroundColor: "rgba(229,182,56,.78)", borderRadius: 5 },
+      { label: "Load", data: rounded("load_kwh"), backgroundColor: "rgba(233,154,105,.72)", borderRadius: 5 },
+      { label: "Grid ≈", data: rounded("grid_kwh"), backgroundColor: "rgba(155,139,217,.65)", borderRadius: 5 }
+    ]},
+    options: chartBase()
+  });
+
+  makeChart("batteryChart", {
+    type: "bar",
+    data: { labels, datasets: [
+      { label: "Charge", data: rounded("battery_charge_ah"), backgroundColor: "rgba(93,185,207,.62)", borderRadius: 5 },
+      { label: "Discharge", data: rounded("battery_discharge_ah"), backgroundColor: "rgba(70,145,164,.82)", borderRadius: 5 }
+    ]},
+    options: chartBase()
+  });
+
+  const conditionOptions = chartBase();
+  conditionOptions.scales.y1 = {
+    position: "right", min: 0, max: 100,
+    grid: { drawOnChartArea: false },
+    ticks: { color: "#5db9cf", callback: value => value + "%" }
+  };
+  makeChart("conditionChart", {
+    type: "line",
+    data: { labels, datasets: [
+      {
+        label: "Peak Load W", data: rounded("peak_load_w"), yAxisID: "y",
+        borderColor: "#e99a69", backgroundColor: "rgba(233,154,105,.09)",
+        fill: true, pointRadius: 2, tension: .25
+      },
+      {
+        label: "Battery SOC", data: rounded("last_battery_soc"), yAxisID: "y1",
+        borderColor: "#5db9cf", pointRadius: 2, tension: .25
+      }
+    ]},
+    options: conditionOptions
   });
 }
 
-function render(rows, range) {
-  const status = document.getElementById("historyStatus");
-  status.innerHTML = `<span class="online-dot"></span>SUPABASE LIVE`;
-  status.classList.remove("offline");
-
-  document.getElementById("statRows").textContent = rows.length.toLocaleString();
-  if (!rows.length) {
-    document.getElementById("historyLast").textContent = "ยังไม่มีข้อมูลในช่วงนี้";
-    ["statLoad","statSoc","statPv","statLoadEnergy","statPeakLoad"].forEach(id => document.getElementById(id).textContent="--");
-    Object.values(charts).forEach(c=>c.destroy()); charts={};
-    return;
-  }
-
-  const latest = rows[rows.length-1];
-  document.getElementById("statLoad").textContent = Math.round(Number(latest.load_power_w ?? 0));
-  document.getElementById("statSoc").textContent = Number(latest.battery_soc ?? 0).toFixed(0);
-  document.getElementById("statPv").textContent = integrateKwh(rows, "solar_power_w").toFixed(1);
-  document.getElementById("statLoadEnergy").textContent = integrateKwh(rows, "load_power_w").toFixed(1);
-  document.getElementById("statPeakLoad").textContent = Math.round(
-    rows.reduce((peak, row) => Math.max(peak, Number(row.load_power_w ?? 0)), 0)
+function renderSummary(rows, buckets) {
+  const sum = totals(rows);
+  text("statSolar", sum.solar.toFixed(2));
+  text("statLoadEnergy", sum.load.toFixed(2));
+  text("statGrid", sum.grid.toFixed(2));
+  text("statGridCost", (sum.grid * TARIFF_BAHT_PER_KWH).toFixed(2));
+  text("statSolarSaving", (sum.solar * TARIFF_BAHT_PER_KWH).toFixed(2));
+  text("statBatteryCharge", sum.charge.toFixed(1));
+  text("statBatteryDischarge", sum.discharge.toFixed(1));
+  text("statPeakLoad", Math.round(sum.peak).toLocaleString());
+  text("statGridLabel", sum.estimated ? "Grid ใช้ไป ≈" : "Grid ใช้ไป");
+  text(
+    "historyDataNote",
+    sum.estimated
+      ? "≈ ค่า Grid คำนวณจาก V×A ชั่วคราว • เมื่อเชื่อม PZEM จะเปลี่ยนเป็นกำลังไฟจริงอัตโนมัติ"
+      : "ค่า Grid มาจากมิเตอร์กำลังไฟจริง"
   );
-  document.getElementById("historyLast").textContent =
-    "ล่าสุด " + new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date(latest.recorded_at));
-
-  const p = decimate(rows);
-  const labels = p.map(r => fmtTime(r.recorded_at, range));
-  const common = { borderWidth:2, pointRadius:0, tension:.22, fill:true };
-
-  makeChart("loadChart", labels, [
-    {
-      ...common, fill:false, label:"Solar W", data:p.map(r=>Number(r.solar_power_w ?? 0)),
-      borderColor:"#e5b638", backgroundColor:"rgba(229,182,56,.10)"
-    },
-    {
-      ...common, label:"Load W", data:p.map(r=>Number(r.load_power_w ?? 0)),
-      borderColor:"#e99a69", backgroundColor:"rgba(233,154,105,.08)"
-    }
-  ], {
-    ...chartOptions(" W",0),
-    plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}},tooltip:{displayColors:true}}
-  });
-
-  makeChart("socChart", labels, [{
-    ...common, label:"Battery SOC", data:p.map(r=>Number(r.battery_soc ?? 0)),
-    borderColor:"#5db9cf", backgroundColor:"rgba(93,185,207,.10)"
-  }], chartOptions("%",0,100));
-
-  makeChart("gridChart", labels, [
-    { ...common, fill:false, label:"Grid V", data:p.map(r=>Number(r.grid_voltage ?? 0)), borderColor:"#9b8bd9", yAxisID:"y" },
-    { ...common, fill:false, label:"Grid A", data:p.map(r=>Number(r.grid_current ?? 0)), borderColor:"#e4ad55", yAxisID:"y1" }
-  ], {
-    responsive:true, maintainAspectRatio:false, animation:false,
-    interaction:{mode:"index",intersect:false},
-    plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}}},
-    scales:{
-      x:{ticks:{maxTicksLimit:7,color:"#8b96a6"},grid:{display:false}},
-      y:{position:"left",ticks:{color:"#9b8bd9",callback:v=>v+"V"},grid:{color:"rgba(120,135,155,.10)"}},
-      y1:{position:"right",beginAtZero:true,ticks:{color:"#b98a42",callback:v=>v+"A"},grid:{drawOnChartArea:false}}
-    }
-  });
-
-  makeChart("tempChart", labels, [{
-    ...common, label:"Inverter °C", data:p.map(r=>Number(r.temp_inverter ?? 0)),
-    borderColor:"#7d8797", backgroundColor:"rgba(125,135,151,.09)"
-  }], chartOptions("°C",20,70));
+  text("energyChartSubtitle", activeRange === "day" ? "แยกตามชั่วโมง" : activeRange === "month" ? "แยกตามวัน" : "แยกตามเดือน");
+  text("historyLast", `${sum.samples.toLocaleString()} records • ค่าไฟ ${TARIFF_BAHT_PER_KWH.toFixed(2)} บาท/หน่วย`);
+  renderCharts(buckets);
 }
 
-async function loadRange(range) {
-  activeRange = range;
+function clearView(message) {
+  [
+    "statSolar", "statLoadEnergy", "statGrid", "statGridCost", "statSolarSaving",
+    "statBatteryCharge", "statBatteryDischarge", "statPeakLoad"
+  ].forEach(id => text(id, "--"));
+  text("historyLast", message);
+  Object.values(charts).forEach(chart => chart.destroy());
+  charts = {};
+}
+
+async function loadPeriod() {
   const status = document.getElementById("historyStatus");
-  status.innerHTML = `<span class="online-dot"></span>LOADING`;
+  status.innerHTML = '<span class="online-dot"></span>LOADING';
+  status.classList.remove("offline");
+  text("periodLabel", periodTitle());
+  text("periodType", activeRange === "day" ? "สรุปรายวัน" : activeRange === "month" ? "สรุปรายเดือน" : "สรุปรายปี");
+  document.getElementById("periodNext").disabled = isCurrentPeriod();
+
   try {
-    render(await fetchHistory(range), range);
-  } catch(e) {
-    console.error(e);
+    const { start, end } = periodBounds();
+    const rows = await fetchDailySummaries(start, end);
+    if (!rows.length) {
+      clearView("ยังไม่มีข้อมูลในช่วงนี้");
+    } else {
+      let buckets;
+      if (activeRange === "day") {
+        const samples = await fetchDaySamples(start, end);
+        buckets = hourlyBuckets(samples);
+      } else if (activeRange === "month") {
+        buckets = dailyBuckets(rows);
+      } else {
+        buckets = monthlyBuckets(rows);
+      }
+      renderSummary(rows, buckets);
+    }
+    status.innerHTML = '<span class="online-dot"></span>SUPABASE LIVE';
+  } catch (error) {
+    console.error(error);
     status.textContent = "SUPABASE OFFLINE";
     status.classList.add("offline");
-    document.getElementById("historyLast").textContent = "อ่าน History ไม่สำเร็จ";
+    clearView("อ่าน History ไม่สำเร็จ");
   }
 }
 
-document.querySelectorAll(".history-tabs button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".history-tabs button").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    loadRange(btn.dataset.range);
+document.querySelectorAll(".history-tabs button").forEach(button => {
+  button.addEventListener("click", () => {
+    activeRange = button.dataset.range;
+    cursorKey = bangkokDateKey(new Date());
+    document.querySelectorAll(".history-tabs button").forEach(item => {
+      const selected = item === button;
+      item.classList.toggle("active", selected);
+      item.setAttribute("aria-selected", String(selected));
+    });
+    loadPeriod();
   });
 });
 
-loadRange("today");
-setInterval(()=>loadRange(activeRange), 60000);
+document.getElementById("periodPrev").addEventListener("click", () => {
+  shiftCursor(-1);
+  loadPeriod();
+});
+
+document.getElementById("periodNext").addEventListener("click", () => {
+  if (isCurrentPeriod()) return;
+  shiftCursor(1);
+  loadPeriod();
+});
+
+loadPeriod();
+setInterval(() => {
+  if (isCurrentPeriod()) loadPeriod();
+}, 60000);
