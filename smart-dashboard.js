@@ -72,11 +72,11 @@ function updateSmartOverview(data, source = "LIVE") {
     title = "Grid กำลังรับโหลดหลัก";
     detail = `โหลดบ้าน ${Math.round(data.loadPower)}W • แบต ${Number(data.batteryCurrent).toFixed(1)}A`;
     tone = "grid";
-  } else if (Number(data.batteryCurrent) > 0.2) {
+  } else if (Number(data.batteryCurrent) < -0.2) {
     title = "Battery กำลังชาร์จ";
     detail = `${Number(data.batteryVoltage).toFixed(1)}V • ${Number(data.batteryCurrent).toFixed(1)}A`;
     tone = "battery";
-  } else if (Number(data.batteryCurrent) < -0.2) {
+  } else if (Number(data.batteryCurrent) > 0.2) {
     title = "Battery กำลังจ่ายพลังงาน";
     detail = `สำรองโหลดปัจจุบันได้ประมาณ ${formatRuntime(runtimeHours)}`;
     tone = "battery";
