@@ -103,12 +103,13 @@ function updateBatteryState(current) {
   state.classList.remove("charging", "discharging", "standby");
   path.classList.remove("reverse");
 
-  if (current > 0.2) {
+  // SRNE sign convention: positive = discharging, negative = charging.
+  if (current < -0.2) {
     state.textContent = "↓ CHARGING";
     state.classList.add("charging");
     direction.textContent = "←";
     path.classList.add("reverse");
-  } else if (current < -0.2) {
+  } else if (current > 0.2) {
     state.textContent = "↑ DISCHARGING";
     state.classList.add("discharging");
     direction.textContent = "→";
