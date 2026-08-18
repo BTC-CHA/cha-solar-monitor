@@ -12,7 +12,7 @@ function setMobileFlowText(id, value) {
 
 function getMobilePowerSource(data) {
   const solarActive = Number(data.pvPower) > 30;
-  const gridActive = Number(data.gridCurrent) > 0.25;
+  const gridActive = Number(data.inverterGridCurrent) > 0.25;
   // SRNE reports positive battery current while the battery supplies the IV.
   const batteryDischarging = Number(data.batteryCurrent) > 1;
 
@@ -31,32 +31,35 @@ function getMobilePowerSource(data) {
 function updateMobileFlow(data) {
   const solarActive = data.pvPower > 10;
   const gridActive = data.gridCurrent > 0.1;
+  const inverterGridActive = data.inverterGridCurrent > 0.1;
   const loadActive = data.loadPower > 10;
   const consumer1Active =
-    data.consumer1Power > 10 || data.consumer1Current > 0.1;
+    data.consumer1Connected &&
+    (data.consumer1Power > 10 || data.consumer1Current > 0.1);
   const batteryActive = Math.abs(data.batteryCurrent) > 0.2;
   const batteryPower = Math.abs(Number(data.batteryVoltage) * Number(data.batteryCurrent));
   const source = getMobilePowerSource(data);
 
   setMobileFlow("mobileSolarPath", "mobileSolarParticles", solarActive);
   setMobileFlow("mobileGridC1Path", "mobileGridC1Particles", gridActive || consumer1Active);
-  setMobileFlow("mobileC1IvPath", "mobileC1IvParticles", gridActive);
+  setMobileFlow("mobileC1IvPath", "mobileC1IvParticles", inverterGridActive);
   setMobileFlow("mobileIvC2Path", "mobileIvC2Particles", loadActive);
-  setMobileFlow("mobileMcPath", "mobileMcParticles", consumer1Active);
+  // PZEM is upstream of the split, so M/C alone is still not directly measured.
+  setMobileFlow("mobileMcPath", "mobileMcParticles", false);
   setMobileFlow("mobileHomePath", "mobileHomeParticles", loadActive);
   setMobileFlow("mobileBatteryPath", "mobileBatteryParticles", batteryActive);
 
   setMobileFlowText("flowSolarValue", `${Math.round(Number(data.pvPower))}W`);
   setMobileFlowText(
     "flowGridMainValue",
-    gridActive ? `≥${Number(data.gridCurrent).toFixed(1)}A` : "0A"
+    gridActive ? `${Math.round(Number(data.gridPower))}W` : "0W"
   );
   setMobileFlowText(
     "flowGridIvValue",
-    gridActive ? `${Number(data.gridCurrent).toFixed(1)}A` : "0A"
+    inverterGridActive ? `${Number(data.inverterGridCurrent).toFixed(1)}A` : "0A"
   );
   setMobileFlowText("flowLoadValue", `${Math.round(Number(data.loadPower))}W`);
-  setMobileFlowText("flowMachineValue", consumer1Active ? "M/C LIVE" : "CT");
+  setMobileFlowText("flowMachineValue", "CT");
   setMobileFlowText(
     "flowBatteryValue",
     `${data.batteryCurrent > 0.2 ? "↑" : data.batteryCurrent < -0.2 ? "↓" : "↔"} ${Math.round(batteryPower)}W`

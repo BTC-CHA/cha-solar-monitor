@@ -16,6 +16,8 @@ function updateMobileCards(data, source = "LIVE") {
   set("mGridVoltage", data.gridVoltage.toFixed(1));
   set("mGridCurrent", data.gridCurrent.toFixed(1));
   set("mGridFrequency", data.gridFrequency.toFixed(2));
+  set("mConsumer1Power", data.consumer1Connected ? Math.round(data.consumer1Power) : "--");
+  set("mConsumer1Current", data.consumer1Connected ? data.consumer1Current.toFixed(2) : "--");
   set("mInvTemp", data.inverterTemperature.toFixed(1) + "°C");
   set("mInvMode", data.inverterMode.startsWith("STATE") ? "ONLINE" : data.inverterMode);
 
@@ -28,7 +30,10 @@ function updateMobileCards(data, source = "LIVE") {
 
 async function getSupabaseLatest() {
   const fields = [
-    "recorded_at","grid_voltage","grid_current","grid_frequency",
+    "recorded_at","grid_voltage","grid_current","grid_frequency","grid_power_w",
+    "inverter_grid_voltage","inverter_grid_current","inverter_grid_frequency",
+    "consumer1_connected","consumer1_power_w","consumer1_current",
+    "output_voltage","output_current",
     "load_power_w","load_current","load_percent",
     "battery_soc","battery_voltage","battery_current",
     "solar_power_w","solar_voltage","solar_current","temp_inverter","mode"
@@ -50,15 +55,19 @@ async function getSupabaseLatest() {
     pvPower:Number(x.solar_power_w ?? 0),
     pvVoltage:Number(x.solar_voltage ?? 0),
     pvCurrent:Number(x.solar_current ?? 0),
-    gridPower:0,
+    gridPower:Number(x.grid_power_w ?? 0),
     gridVoltage:Number(x.grid_voltage ?? 0),
     gridCurrent:Number(x.grid_current ?? 0),
     gridFrequency:Number(x.grid_frequency ?? 0),
-    consumer1Power:0, consumer1Current:0,
+    inverterGridCurrent:Number(x.inverter_grid_current ?? 0),
+    consumer1Connected:x.consumer1_connected === true,
+    consumer1Power:Number(x.consumer1_power_w ?? 0),
+    consumer1Current:Number(x.consumer1_current ?? 0),
     loadPower:Number(x.load_power_w ?? 0),
     loadCurrent:Number(x.load_current ?? 0),
     loadPercent:Number(x.load_percent ?? 0),
-    inverterVoltage:0, inverterCurrent:0,
+    inverterVoltage:Number(x.output_voltage ?? 0),
+    inverterCurrent:Number(x.output_current ?? 0),
     inverterTemperature:Number(x.temp_inverter ?? 0),
     inverterMode:String(x.mode ?? "ONLINE"),
     batterySOC:Number(x.battery_soc ?? 0),
@@ -83,14 +92,16 @@ function toggleFlow(id, active) {
   path.classList.toggle("off", !active);
 }
 
-function setGatewayStatus(online) {
+function setGatewayStatus(online, pzemOnline = false) {
   const box = document.querySelector(".online");
   if (!box) return;
 
   box.classList.toggle("offline", !online);
   box.innerHTML =
     `<span class="online-dot"></span>` +
-    (online ? "ESP32 / SRNE ONLINE" : "ESP32 / SRNE OFFLINE");
+    (online
+      ? (pzemOnline ? "ESP32 / SRNE / PZEM ONLINE" : "ESP32 / SRNE ONLINE • PZEM OFFLINE")
+      : "ESP32 / SRNE OFFLINE");
 }
 
 function updateBatteryState(current) {
@@ -129,9 +140,14 @@ function updateUI(data) {
   setText("gridCurrent", data.gridCurrent.toFixed(1));
   setText("gridFrequency", data.gridFrequency.toFixed(2));
 
-  // Consumer 1 waits for its dedicated CT / RS485 meter.
-  setText("consumer1Power", "--");
-  setText("consumer1Current", "--");
+  setText("consumer1Power", data.consumer1Connected ? Math.round(data.consumer1Power) : "--");
+  setText("consumer1Current", data.consumer1Connected ? data.consumer1Current.toFixed(2) : "--");
+
+  const consumer1Source = document.getElementById("consumer1Source");
+  if (consumer1Source) {
+    consumer1Source.textContent = data.consumer1Connected ? "PZEM LIVE" : "PZEM OFFLINE";
+    consumer1Source.classList.toggle("waiting", !data.consumer1Connected);
+  }
 
   setText("loadPower", Math.round(data.loadPower));
   setText("loadCurrent", data.loadCurrent.toFixed(1));
@@ -156,8 +172,8 @@ function updateUI(data) {
 
   toggleFlow("solarPath", data.pvPower > 10);
   toggleFlow("gridMainPath", data.gridCurrent > 0.1);
-  toggleFlow("gridInvPath", data.gridCurrent > 0.1);
-  toggleFlow("gridC1Path", false);
+  toggleFlow("gridInvPath", data.inverterGridCurrent > 0.1);
+  toggleFlow("gridC1Path", data.consumer1Connected && data.consumer1Current > 0.1);
   toggleFlow("consumer2Path", data.loadPower > 10);
   toggleFlow("batteryPath", Math.abs(data.batteryCurrent) > 0.2);
 
@@ -178,22 +194,29 @@ async function getESP32Data() {
       throw new Error("SRNE reports offline");
     }
 
-    const gridV = Number(live.grid?.voltage ?? 0);
-    const gridA = Number(live.grid?.current ?? 0);
+    const srneGridV = Number(live.grid?.voltage ?? 0);
+    const srneGridA = Number(live.grid?.current ?? 0);
+    const pzemConnected = live.consumer1?.connected === true;
+    const mainGridV = pzemConnected ? Number(live.consumer1?.voltage ?? 0) : srneGridV;
+    const mainGridA = pzemConnected ? Number(live.consumer1?.current ?? 0) : srneGridA;
+    const mainGridHz = pzemConnected
+      ? Number(live.consumer1?.frequency ?? 0)
+      : Number(live.grid?.frequency ?? 0);
 
     const data = {
       pvPower: Number(live.solar?.power ?? 0),
       pvVoltage: Number(live.solar?.voltage ?? 0),
       pvCurrent: Number(live.solar?.current ?? 0),
 
-      // GRID active power is intentionally not inferred from V x A.
-      gridPower: 0,
-      gridVoltage: gridV,
-      gridCurrent: gridA,
-      gridFrequency: Number(live.grid?.frequency ?? 0),
+      gridPower: pzemConnected ? Number(live.consumer1?.power ?? 0) : 0,
+      gridVoltage: mainGridV,
+      gridCurrent: mainGridA,
+      gridFrequency: mainGridHz,
+      inverterGridCurrent: srneGridA,
 
-      consumer1Power: 0,
-      consumer1Current: 0,
+      consumer1Connected: pzemConnected,
+      consumer1Power: pzemConnected ? Number(live.consumer1?.power ?? 0) : 0,
+      consumer1Current: pzemConnected ? Number(live.consumer1?.current ?? 0) : 0,
 
       loadPower: Number(live.load?.power ?? 0),
       loadCurrent: Number(live.load?.current ?? 0),
@@ -212,7 +235,7 @@ async function getESP32Data() {
     lastGoodData = data;
     updateUI(data);
     updateMobileCards(data, "LIVE");
-    setGatewayStatus(true);
+    setGatewayStatus(true, data.consumer1Connected);
 
     console.log("CHA ESP32 LIVE:", live);
   } catch (error) {

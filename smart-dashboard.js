@@ -34,6 +34,7 @@ function updateSmartOverview(data, source = "LIVE") {
   const usableSoc = Math.max(0, Number(data.batterySOC) - SMART_CONFIG.reserveSoc);
   const usableKwh = nominalKwh * usableSoc / 100 * SMART_CONFIG.inverterEfficiency;
   const loadKw = Math.max(0, Number(data.loadPower)) / 1000;
+  const inverterGridCurrent = Number(data.inverterGridCurrent ?? data.gridCurrent);
   const runtimeHours = loadKw >= 0.05 ? usableKwh / loadKw : Infinity;
 
   smartText("batteryRuntime", formatRuntime(runtimeHours));
@@ -59,7 +60,7 @@ function updateSmartOverview(data, source = "LIVE") {
     detail = `ผลิตมากกว่าโหลดประมาณ ${Math.round(data.pvPower - data.loadPower)}W`;
     tone = "solar";
   } else if (
-    Number(data.gridCurrent) > 0.2 &&
+    inverterGridCurrent > 0.2 &&
     Number(data.pvPower) < 50 &&
     Number(data.batterySOC) > 25 &&
     Math.abs(Number(data.batteryCurrent)) < 1 &&
@@ -68,7 +69,7 @@ function updateSmartOverview(data, source = "LIVE") {
     title = "แบตยังเหลือ แต่ระบบกำลังใช้ Grid";
     detail = `แบต ${Number(data.batterySOC).toFixed(0)}% (${Number(data.batteryVoltage).toFixed(1)}V) • ตรวจ Output Priority และจุดสลับ Grid/Battery`;
     tone = "grid";
-  } else if (Number(data.gridCurrent) > 0.2 && Number(data.pvPower) < 50) {
+  } else if (inverterGridCurrent > 0.2 && Number(data.pvPower) < 50) {
     title = "Grid กำลังรับโหลดหลัก";
     detail = `โหลดบ้าน ${Math.round(data.loadPower)}W • แบต ${Number(data.batteryCurrent).toFixed(1)}A`;
     tone = "grid";

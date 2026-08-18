@@ -354,7 +354,7 @@
     <div class="fn gridn"><i>⚡</i><b>GRID</b><strong><span id="mGridVoltage">0.0</span><small> V</small></strong><em><span id="mGridCurrent">0.0</span>A · <span id="mGridFrequency">0.00</span>Hz</em></div>
     <div class="fn iv"><i>⚡</i><b>IV</b><strong id="mInvMode">ONLINE</strong><em>LOAD <span id="mLoadPercent">0</span>% · <span id="mInvTemp">0.0°C</span></em></div>
     <div class="fn c2n"><i>🏠</i><b>CONSUMER 2</b><strong><span id="mLoadPower">0</span><small> W</small></strong><em><span id="mLoadCurrent">0.0</span>A</em></div>
-    <div class="fn c1n"><i>⚡</i><b>CONSUMER 1</b><em>MAIN · SPLIT</em></div>
+    <div class="fn c1n"><i>⚡</i><b>CONSUMER 1</b><strong><span id="mConsumer1Power">--</span><small> W</small></strong><em><span id="mConsumer1Current">--</span>A · MAIN</em></div>
     <div class="fn battery"><i>🔋</i><b>BATTERY</b><strong><span id="mBatterySOC">0</span><small>%</small></strong><em><span id="mBatteryVoltage">0.0</span>V · <span id="mBatteryCurrent">0.0</span>A</em></div>
     <div class="fn mcn"><i>⚙️</i><b>M/C</b><strong>--<small> W</small></strong><em>CT WAITING</em></div>
     <div class="fn homen"><i>🏡</i><b>HOME</b><em>House load</em></div>
@@ -653,12 +653,10 @@
   <div class="node consumer1-node">
 
     <div
-      class="
-        source-badge
-        waiting
-      "
+      id="consumer1Source"
+      class="source-badge"
     >
-      CT WAITING
+      PZEM LIVE
     </div>
 
     <div class="node-icon">
