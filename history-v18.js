@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://txnveztxwqjsclwwtile.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ITFDtjM2BXv0jwaQq7x0jw_rZEXlrTU";
 const DEVICE_ID = "cha-solar-gateway";
 const TARIFF_BAHT_PER_KWH = 4.5;
+const BILLING_START_DAY = 7;
 
 let charts = {};
 let activeRange = "day";
@@ -33,10 +34,17 @@ function makeKey(year, month, day = 1) {
   return date.toISOString().slice(0, 10);
 }
 
+function currentBillingKey() {
+  const today = keyParts(bangkokDateKey(new Date()));
+  return today.day >= BILLING_START_DAY
+    ? makeKey(today.year, today.month, BILLING_START_DAY)
+    : makeKey(today.year, today.month - 1, BILLING_START_DAY);
+}
+
 function shiftCursor(amount) {
   const { year, month, day } = keyParts(cursorKey);
   if (activeRange === "day") cursorKey = makeKey(year, month, day + amount);
-  if (activeRange === "month") cursorKey = makeKey(year, month + amount, 1);
+  if (activeRange === "month") cursorKey = makeKey(year, month + amount, BILLING_START_DAY);
   if (activeRange === "year") cursorKey = makeKey(year + amount, 1, 1);
 }
 
@@ -46,9 +54,9 @@ function periodBounds() {
     return { start: makeKey(year, month, day), end: makeKey(year, month, day + 1) };
   }
   if (activeRange === "month") {
-    return { start: makeKey(year, month, 1), end: makeKey(year, month + 1, 1) };
+    return { start: makeKey(year, month, BILLING_START_DAY), end: makeKey(year, month + 1, BILLING_START_DAY) };
   }
-  return { start: makeKey(year, 1, 1), end: makeKey(year + 1, 1, 1) };
+  return { start: makeKey(year, 1, BILLING_START_DAY), end: makeKey(year + 1, 1, BILLING_START_DAY) };
 }
 
 function isCurrentPeriod() {
@@ -57,7 +65,8 @@ function isCurrentPeriod() {
   const cursor = keyParts(cursorKey);
   if (activeRange === "day") return cursorKey >= today;
   if (activeRange === "month") {
-    return cursor.year > now.year || (cursor.year === now.year && cursor.month >= now.month);
+    const current = keyParts(currentBillingKey());
+    return cursor.year > current.year || (cursor.year === current.year && cursor.month >= current.month);
   }
   return cursor.year >= now.year;
 }
@@ -71,9 +80,11 @@ function periodTitle() {
     }).format(date);
   }
   if (activeRange === "month") {
-    return new Intl.DateTimeFormat("th-TH", {
-      timeZone: "Asia/Bangkok", month: "long", year: "numeric"
-    }).format(date);
+    const endKey = keyParts(makeKey(year, month + 1, BILLING_START_DAY - 1));
+    const startDate = new Date(Date.UTC(year, month - 1, BILLING_START_DAY, 12));
+    const endDate = new Date(Date.UTC(endKey.year, endKey.month - 1, endKey.day, 12));
+    const short = value => new Intl.DateTimeFormat("th-TH", { day:"numeric", month:"short" }).format(value);
+    return `${short(startDate)} – ${short(endDate)} ${endKey.year + 543}`;
   }
   return `ปี ${year + 543}`;
 }
@@ -174,17 +185,21 @@ function dailyBuckets(rows) {
 function monthlyBuckets(rows) {
   const months = new Map();
   rows.forEach(row => {
-    const month = Number(row.energy_date.slice(5, 7));
-    if (!months.has(month)) {
+    const parts = keyParts(row.energy_date);
+    const cycleKey = parts.day >= BILLING_START_DAY
+      ? makeKey(parts.year, parts.month, BILLING_START_DAY)
+      : makeKey(parts.year, parts.month - 1, BILLING_START_DAY);
+    const cycle = keyParts(cycleKey);
+    if (!months.has(cycleKey)) {
       const label = new Intl.DateTimeFormat("th-TH", { month: "short" })
-        .format(new Date(`2026-${String(month).padStart(2, "0")}-01T12:00:00+07:00`));
-      months.set(month, {
+        .format(new Date(Date.UTC(cycle.year, cycle.month - 1, BILLING_START_DAY, 12)));
+      months.set(cycleKey, {
         label, solar_kwh: 0, load_kwh: 0, grid_kwh: 0,
         battery_charge_ah: 0, battery_discharge_ah: 0,
         peak_load_w: 0, last_battery_soc: 0, grid_is_estimated: false
       });
     }
-    const bucket = months.get(month);
+    const bucket = months.get(cycleKey);
     ["solar_kwh", "load_kwh", "grid_kwh", "battery_charge_ah", "battery_discharge_ah"]
       .forEach(key => { bucket[key] += Number(row[key] || 0); });
     bucket.peak_load_w = Math.max(bucket.peak_load_w, Number(row.peak_load_w || 0));
@@ -317,7 +332,7 @@ async function loadPeriod() {
   status.innerHTML = '<span class="online-dot"></span>LOADING';
   status.classList.remove("offline");
   text("periodLabel", periodTitle());
-  text("periodType", activeRange === "day" ? "สรุปรายวัน" : activeRange === "month" ? "สรุปรายเดือน" : "สรุปรายปี");
+  text("periodType", activeRange === "day" ? "สรุปรายวัน" : activeRange === "month" ? "รอบบิล เริ่มวันที่ 7" : "สรุปรอบบิลรายปี");
   document.getElementById("periodNext").disabled = isCurrentPeriod();
 
   try {
@@ -349,7 +364,7 @@ async function loadPeriod() {
 document.querySelectorAll(".history-tabs button").forEach(button => {
   button.addEventListener("click", () => {
     activeRange = button.dataset.range;
-    cursorKey = bangkokDateKey(new Date());
+    cursorKey = activeRange === "month" ? currentBillingKey() : bangkokDateKey(new Date());
     document.querySelectorAll(".history-tabs button").forEach(item => {
       const selected = item === button;
       item.classList.toggle("active", selected);

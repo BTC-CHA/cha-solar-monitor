@@ -2131,6 +2131,9 @@ footer span {
    BATTERY MONITOR
 ========================================================= */
 .battery-body { padding-bottom:96px; }
+.pwa-install-button { position:fixed; right:14px; bottom:88px; z-index:120; padding:10px 14px; border:1px solid rgba(82,183,154,.28); border-radius:999px; color:#397d69; background:rgba(238,250,246,.96); box-shadow:0 9px 25px rgba(67,105,93,.16); font:800 11px/1 system-ui,sans-serif; backdrop-filter:blur(10px); cursor:pointer; }
+.pwa-install-button[hidden] { display:none; }
+.pwa-install-button span { margin-right:4px; }
 .battery-header {
   max-width: 980px;
   margin: 0 auto;

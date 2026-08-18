@@ -2,7 +2,16 @@
   "name": "CHA Solar Monitor",
   "short_name": "CHA Solar",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#f7f8fc",
-  "theme_color": "#f7f8fc"
+  "theme_color": "#eef9f6",
+  "description": "ระบบติดตามพลังงาน Solar, Grid, Load และแบตเตอรี่ของ CHA",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/cha-solar-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/cha-solar-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/cha-solar-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
