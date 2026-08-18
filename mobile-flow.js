@@ -29,9 +29,9 @@ function getMobilePowerSource(data) {
 }
 
 function updateMobileFlow(data) {
+  data = addBranchEstimates(data);
   const solarActive = data.pvPower > 10;
   const gridActive = data.gridCurrent > 0.1;
-  const inverterGridActive = data.inverterGridCurrent > 0.1;
   const loadActive = data.loadPower > 10;
   const consumer1Active =
     data.consumer1Connected &&
@@ -42,10 +42,21 @@ function updateMobileFlow(data) {
 
   setMobileFlow("mobileSolarPath", "mobileSolarParticles", solarActive);
   setMobileFlow("mobileGridC1Path", "mobileGridC1Particles", gridActive || consumer1Active);
-  setMobileFlow("mobileC1IvPath", "mobileC1IvParticles", inverterGridActive);
+  setMobileFlow(
+    "mobileC1IvPath",
+    "mobileC1IvParticles",
+    data.inverterGridPowerEstimate > 5
+  );
+  const ivStandbyLine = document.getElementById("mobileC1IvPath");
+  const ivStandbyParticles = document.getElementById("mobileC1IvParticles");
+  if (ivStandbyLine) ivStandbyLine.classList.toggle("standby-flow", data.inverterGridStandby);
+  if (ivStandbyParticles) ivStandbyParticles.classList.toggle("standby-flow", data.inverterGridStandby);
   setMobileFlow("mobileIvC2Path", "mobileIvC2Particles", loadActive);
-  // PZEM is upstream of the split, so M/C alone is still not directly measured.
-  setMobileFlow("mobileMcPath", "mobileMcParticles", false);
+  setMobileFlow(
+    "mobileMcPath",
+    "mobileMcParticles",
+    data.machinePowerEstimate > 10
+  );
   setMobileFlow("mobileHomePath", "mobileHomeParticles", loadActive);
   setMobileFlow("mobileBatteryPath", "mobileBatteryParticles", batteryActive);
 
@@ -56,10 +67,15 @@ function updateMobileFlow(data) {
   );
   setMobileFlowText(
     "flowGridIvValue",
-    inverterGridActive ? `${Number(data.inverterGridCurrent).toFixed(1)}A` : "0A"
+    data.inverterGridPowerEstimate > 5
+      ? `≈${Math.round(data.inverterGridPowerEstimate)}W`
+      : "0W"
   );
   setMobileFlowText("flowLoadValue", `${Math.round(Number(data.loadPower))}W`);
-  setMobileFlowText("flowMachineValue", "CT");
+  setMobileFlowText(
+    "flowMachineValue",
+    data.consumer1Connected ? `≈${Math.round(data.machinePowerEstimate)}W` : "--"
+  );
   setMobileFlowText(
     "flowBatteryValue",
     `${data.batteryCurrent > 0.2 ? "↑" : data.batteryCurrent < -0.2 ? "↓" : "↔"} ${Math.round(batteryPower)}W`

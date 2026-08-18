@@ -2,7 +2,46 @@
 const SUPABASE_URL = "https://txnveztxwqjsclwwtile.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ITFDtjM2BXv0jwaQq7x0jw_rZEXlrTU";
 
+// CT1/PZEM is installed on MAIN before the split. CT2 can override the
+// estimated machine branch later without changing the dashboard contract.
+const MAIN_FLOW_CONFIG = {
+  inverterStandbyW: 28,
+  inverterGridPfEstimate: 0.90
+};
+
+function addBranchEstimates(data) {
+  const mainPower = Math.max(0, Number(data.gridPower) || 0);
+  const inverterGridCurrent = Math.max(0, Number(data.inverterGridCurrent) || 0);
+  const inverterGridVoltage = Math.max(
+    0,
+    Number(data.inverterGridVoltage) || Number(data.gridVoltage) || 0
+  );
+  const inverterGridActive = inverterGridCurrent > 0.1;
+
+  let inverterGridPowerEstimate = inverterGridActive
+    ? inverterGridVoltage * inverterGridCurrent * MAIN_FLOW_CONFIG.inverterGridPfEstimate
+    : MAIN_FLOW_CONFIG.inverterStandbyW;
+
+  if (data.consumer1Connected) {
+    inverterGridPowerEstimate = Math.min(mainPower, inverterGridPowerEstimate);
+  }
+
+  const ct2Connected = data.ct2Connected === true;
+  const machinePowerEstimate = ct2Connected
+    ? Math.max(0, Number(data.ct2Power) || 0)
+    : Math.max(0, mainPower - inverterGridPowerEstimate);
+
+  return {
+    ...data,
+    inverterGridPowerEstimate,
+    inverterGridStandby: !inverterGridActive && inverterGridPowerEstimate > 5,
+    machinePowerEstimate,
+    machinePowerEstimated: !ct2Connected
+  };
+}
+
 function updateMobileCards(data, source = "LIVE") {
+  data = addBranchEstimates(data);
   const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
   set("mPvPower", Math.round(data.pvPower));
   set("mPvVoltage", data.pvVoltage.toFixed(1));
@@ -18,6 +57,8 @@ function updateMobileCards(data, source = "LIVE") {
   set("mGridFrequency", data.gridFrequency.toFixed(2));
   set("mConsumer1Power", data.consumer1Connected ? Math.round(data.consumer1Power) : "--");
   set("mConsumer1Current", data.consumer1Connected ? data.consumer1Current.toFixed(2) : "--");
+  set("mMachinePower", data.consumer1Connected ? Math.round(data.machinePowerEstimate) : "--");
+  set("mMachineSource", data.machinePowerEstimated ? "EST. • CT2 READY" : "CT2 LIVE");
   set("mInvTemp", data.inverterTemperature.toFixed(1) + "°C");
   set("mInvMode", data.inverterMode.startsWith("STATE") ? "ONLINE" : data.inverterMode);
 
@@ -59,6 +100,7 @@ async function getSupabaseLatest() {
     gridVoltage:Number(x.grid_voltage ?? 0),
     gridCurrent:Number(x.grid_current ?? 0),
     gridFrequency:Number(x.grid_frequency ?? 0),
+    inverterGridVoltage:Number(x.inverter_grid_voltage ?? 0),
     inverterGridCurrent:Number(x.inverter_grid_current ?? 0),
     consumer1Connected:x.consumer1_connected === true,
     consumer1Power:Number(x.consumer1_power_w ?? 0),
@@ -132,6 +174,7 @@ function updateBatteryState(current) {
 }
 
 function updateUI(data) {
+  data = addBranchEstimates(data);
   setText("pvPower", Math.round(data.pvPower));
   setText("pvVoltage", data.pvVoltage.toFixed(1));
   setText("pvCurrent", data.pvCurrent.toFixed(1));
@@ -172,7 +215,7 @@ function updateUI(data) {
 
   toggleFlow("solarPath", data.pvPower > 10);
   toggleFlow("gridMainPath", data.gridCurrent > 0.1);
-  toggleFlow("gridInvPath", data.inverterGridCurrent > 0.1);
+  toggleFlow("gridInvPath", data.inverterGridPowerEstimate > 5);
   toggleFlow("gridC1Path", data.consumer1Connected && data.consumer1Current > 0.1);
   toggleFlow("consumer2Path", data.loadPower > 10);
   toggleFlow("batteryPath", Math.abs(data.batteryCurrent) > 0.2);
@@ -212,6 +255,7 @@ async function getESP32Data() {
       gridVoltage: mainGridV,
       gridCurrent: mainGridA,
       gridFrequency: mainGridHz,
+      inverterGridVoltage: srneGridV,
       inverterGridCurrent: srneGridA,
 
       consumer1Connected: pzemConnected,
