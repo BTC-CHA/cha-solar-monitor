@@ -1,6 +1,14 @@
 
 const SUPABASE_URL = "https://txnveztxwqjsclwwtile.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ITFDtjM2BXv0jwaQq7x0jw_rZEXlrTU";
+const LOCAL_TIMEOUT_MS = 2200;
+
+function fetchWithTimeout(url, options = {}, timeoutMs = LOCAL_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
 
 // CT1/PZEM is installed on MAIN before the split. CT2 can override the
 // estimated machine branch later without changing the dashboard contract.
@@ -111,6 +119,7 @@ async function getSupabaseLatest() {
   const cloudBms = x.battery_bms || x.bms_data || x.bms;
   const useCloudBms = cloudBms?.connected !== false && cloudBms?.decoded === true;
   return {
+    recordedAt:String(x.recorded_at || ""),
     pvPower:Number(x.solar_power_w ?? 0),
     pvVoltage:Number(x.solar_voltage ?? 0),
     pvCurrent:Number(x.solar_current ?? 0),
@@ -163,6 +172,15 @@ function setGatewayStatus(online, pzemOnline = false) {
     (online
       ? (pzemOnline ? "ESP32 / SRNE / PZEM ONLINE" : "ESP32 / SRNE ONLINE • PZEM OFFLINE")
       : "ESP32 / SRNE OFFLINE");
+}
+
+function setCloudStatus(recordedAt) {
+  const box = document.querySelector(".online");
+  if (!box) return;
+  const age = recordedAt ? Math.max(0, Date.now() - new Date(recordedAt).getTime()) : Infinity;
+  const stale = age > 2 * 60 * 1000;
+  box.classList.toggle("offline", stale);
+  box.innerHTML = `<span class="online-dot"></span>${stale ? "CLOUD DATA STALE" : "SUPABASE CLOUD ONLINE"}`;
 }
 
 function updateBatteryState(current) {
@@ -245,7 +263,7 @@ function updateUI(data) {
 
 async function getESP32Data() {
   try {
-    const response = await fetch(ESP32_LIVE_URL, { cache: "no-store" });
+    const response = await fetchWithTimeout(ESP32_LIVE_URL, { cache: "no-store" });
 
     if (!response.ok) {
       throw new Error("ESP32 HTTP " + response.status);
@@ -310,6 +328,7 @@ async function getESP32Data() {
       lastGoodData = cloudData;
       updateUI(cloudData);
       updateMobileCards(cloudData, "CLOUD");
+      setCloudStatus(cloudData.recordedAt);
     } catch (cloudError) {
       console.warn("SUPABASE LATEST OFFLINE:", cloudError);
       if (lastGoodData) {
@@ -336,7 +355,7 @@ async function getESP32Energy() {
   const status = document.getElementById("energyStatus");
 
   try {
-    const response = await fetch(ESP32_ENERGY_URL, { cache: "no-store" });
+    const response = await fetchWithTimeout(ESP32_ENERGY_URL, { cache: "no-store" });
     if (!response.ok) throw new Error("ENERGY HTTP " + response.status);
 
     const energy = await response.json();
@@ -355,9 +374,26 @@ async function getESP32Energy() {
     }
   } catch (error) {
     console.warn("ENERGY API OFFLINE:", error);
-    if (status) {
-      status.textContent = "ENERGY OFFLINE";
-      status.classList.add("offline");
+    try {
+      const today = new Intl.DateTimeFormat("en-CA", {
+        timeZone:"Asia/Bangkok", year:"numeric", month:"2-digit", day:"2-digit"
+      }).format(new Date());
+      const url = `${SUPABASE_URL}/rest/v1/solar_history_daily?select=*` +
+        `&device_id=eq.cha-solar-gateway&energy_date=eq.${today}&limit=1`;
+      const cloudResponse = await fetch(url, { headers:{apikey:SUPABASE_KEY}, cache:"no-store" });
+      if (!cloudResponse.ok) throw new Error("ENERGY CLOUD "+cloudResponse.status);
+      const rows = await cloudResponse.json();
+      if (!rows.length) throw new Error("NO ENERGY CLOUD DATA");
+      const energy = rows[0];
+      setText("energyPvToday", formatEnergy(energy.solar_kwh));
+      setText("energyLoadToday", formatEnergy(energy.load_kwh));
+      setText("energyGridToday", formatEnergy(energy.grid_kwh));
+      setText("energyBattCharge", formatEnergy(energy.battery_charge_ah, 0));
+      setText("energyBattDischarge", formatEnergy(energy.battery_discharge_ah, 0));
+      if (status) { status.textContent = "SUPABASE ENERGY • CLOUD"; status.classList.remove("offline"); }
+    } catch (cloudError) {
+      console.warn("ENERGY CLOUD OFFLINE:", cloudError);
+      if (status) { status.textContent = "ENERGY OFFLINE"; status.classList.add("offline"); }
     }
   }
 }
