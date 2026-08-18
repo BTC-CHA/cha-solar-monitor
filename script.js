@@ -40,6 +40,30 @@ function addBranchEstimates(data) {
   };
 }
 
+function getBatteryTelemetry(live) {
+  const bms = live?.bms;
+  const bmsFresh =
+    bms?.connected === true &&
+    bms?.decoded === true &&
+    Number(bms?.last_response_age_ms ?? 999999) < 15000;
+
+  if (bmsFresh) {
+    return {
+      batterySOC:Number(bms.soc ?? 0),
+      batteryVoltage:Number(bms.voltage ?? 0),
+      batteryCurrent:Number(bms.current ?? 0),
+      batterySource:"BMS"
+    };
+  }
+
+  return {
+    batterySOC:Number(live?.battery?.soc ?? 0),
+    batteryVoltage:Number(live?.battery?.voltage ?? 0),
+    batteryCurrent:Number(live?.battery?.current ?? 0),
+    batterySource:"SRNE"
+  };
+}
+
 function updateMobileCards(data, source = "LIVE") {
   data = addBranchEstimates(data);
   const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
@@ -52,6 +76,7 @@ function updateMobileCards(data, source = "LIVE") {
   set("mBatterySOC", data.batterySOC.toFixed(0));
   set("mBatteryVoltage", data.batteryVoltage.toFixed(1));
   set("mBatteryCurrent", data.batteryCurrent.toFixed(1));
+  set("mBatterySource", data.batterySource === "BMS" ? "BATTERY • BMS" : "BATTERY • SRNE");
   set("mGridVoltage", data.gridVoltage.toFixed(1));
   set("mGridCurrent", data.gridCurrent.toFixed(1));
   set("mGridFrequency", data.gridFrequency.toFixed(2));
@@ -70,17 +95,7 @@ function updateMobileCards(data, source = "LIVE") {
 }
 
 async function getSupabaseLatest() {
-  const fields = [
-    "recorded_at","grid_voltage","grid_current","grid_frequency","grid_power_w",
-    "inverter_grid_voltage","inverter_grid_current","inverter_grid_frequency",
-    "consumer1_connected","consumer1_power_w","consumer1_current",
-    "output_voltage","output_current",
-    "load_power_w","load_current","load_percent",
-    "battery_soc","battery_voltage","battery_current",
-    "solar_power_w","solar_voltage","solar_current","temp_inverter","mode"
-  ].join(",");
-
-  const url = `${SUPABASE_URL}/rest/v1/solar_history?select=${fields}` +
+  const url = `${SUPABASE_URL}/rest/v1/solar_history?select=*` +
     `&device_id=eq.cha-solar-gateway&order=recorded_at.desc&limit=1`;
 
   const r = await fetch(url, {
@@ -92,6 +107,8 @@ async function getSupabaseLatest() {
   if (!rows.length) throw new Error("NO HISTORY");
 
   const x = rows[0];
+  const cloudBms = x.battery_bms || x.bms_data || x.bms;
+  const useCloudBms = cloudBms?.connected !== false && cloudBms?.decoded === true;
   return {
     pvPower:Number(x.solar_power_w ?? 0),
     pvVoltage:Number(x.solar_voltage ?? 0),
@@ -112,9 +129,10 @@ async function getSupabaseLatest() {
     inverterCurrent:Number(x.output_current ?? 0),
     inverterTemperature:Number(x.temp_inverter ?? 0),
     inverterMode:String(x.mode ?? "ONLINE"),
-    batterySOC:Number(x.battery_soc ?? 0),
-    batteryVoltage:Number(x.battery_voltage ?? 0),
-    batteryCurrent:Number(x.battery_current ?? 0)
+    batterySOC:Number(useCloudBms ? cloudBms.soc : (x.battery_soc ?? 0)),
+    batteryVoltage:Number(useCloudBms ? cloudBms.voltage : (x.battery_voltage ?? 0)),
+    batteryCurrent:Number(useCloudBms ? cloudBms.current : (x.battery_current ?? 0)),
+    batterySource:useCloudBms ? "BMS" : "SRNE"
   };
 }
 
@@ -156,16 +174,16 @@ function updateBatteryState(current) {
   state.classList.remove("charging", "discharging", "standby");
   path.classList.remove("reverse");
 
-  // SRNE sign convention: positive = discharging, negative = charging.
+  // Battery current convention used by the live BMS: negative = discharging.
   if (current < -0.2) {
-    state.textContent = "↓ CHARGING";
-    state.classList.add("charging");
-    direction.textContent = "←";
-    path.classList.add("reverse");
-  } else if (current > 0.2) {
     state.textContent = "↑ DISCHARGING";
     state.classList.add("discharging");
     direction.textContent = "→";
+    path.classList.add("reverse");
+  } else if (current > 0.2) {
+    state.textContent = "↓ CHARGING";
+    state.classList.add("charging");
+    direction.textContent = "←";
   } else {
     state.textContent = "↔ STANDBY";
     state.classList.add("standby");
@@ -209,6 +227,7 @@ function updateUI(data) {
   setText("batterySOC", data.batterySOC.toFixed(0));
   setText("batteryVoltage", data.batteryVoltage.toFixed(1));
   setText("batteryCurrent", data.batteryCurrent.toFixed(1));
+  setText("batteryDataSource", data.batterySource || "SRNE");
 
   setText("solarFlowValue", Math.round(data.pvPower));
   setText("consumer2FlowValue", Math.round(data.loadPower));
@@ -246,6 +265,7 @@ async function getESP32Data() {
       ? Number(live.consumer1?.frequency ?? 0)
       : Number(live.grid?.frequency ?? 0);
 
+    const batteryTelemetry = getBatteryTelemetry(live);
     const data = {
       pvPower: Number(live.solar?.power ?? 0),
       pvVoltage: Number(live.solar?.voltage ?? 0),
@@ -271,9 +291,7 @@ async function getESP32Data() {
       inverterTemperature: Number(live.temperature?.inverter ?? 0),
       inverterMode: String(live.mode ?? "UNKNOWN"),
 
-      batterySOC: Number(live.battery?.soc ?? 0),
-      batteryVoltage: Number(live.battery?.voltage ?? 0),
-      batteryCurrent: Number(live.battery?.current ?? 0)
+      ...batteryTelemetry
     };
 
     lastGoodData = data;
