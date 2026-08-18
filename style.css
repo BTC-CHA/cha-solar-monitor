@@ -1813,6 +1813,42 @@ footer span {
 /* =========================================================
    HISTORY V1.4
 ========================================================= */
+.cha-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: calc(100% - 28px);
+  max-width: 520px;
+  height: 62px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  padding: 6px;
+  z-index: 1000;
+  border: 1px solid rgba(220,225,234,.95);
+  border-radius: 22px;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(68,82,103,.13);
+}
+.cha-nav a {
+  position: relative;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  border-radius: 16px;
+  color: #919baa;
+  text-decoration: none;
+  font-size: 9px;
+  font-weight: 700;
+}
+.cha-nav a.active { color:#569c84; background:#edf8f4; }
+.cha-nav .nav-icon { font-size:20px; line-height:1; }
+
 .history-body { padding-bottom: 90px; }
 .history-topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin:8px 0 14px; }
 .history-topbar h2 { margin:3px 0 0; }
@@ -2089,4 +2125,133 @@ footer span {
 
 @media (prefers-reduced-motion:reduce){
  .flow-particles animateMotion{animation:none}
+}
++
+/* =========================================================
+   BATTERY MONITOR
+========================================================= */
+.battery-body { padding-bottom:96px; }
+.battery-header {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 18px 18px 8px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.battery-header h1 { margin:3px 0 2px; font-size:clamp(28px,7vw,42px); }
+.battery-header p { margin:0; color:var(--muted); font-size:12px; font-weight:650; }
+.battery-page { max-width:980px; margin:0 auto; padding:12px 14px 28px; }
+.battery-hero {
+  display:grid;
+  grid-template-columns:142px minmax(0,1fr);
+  align-items:center;
+  gap:18px;
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:28px;
+  background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(233,248,245,.9));
+  box-shadow:var(--shadow);
+}
+.soc-ring {
+  --soc:0;
+  width:132px;
+  aspect-ratio:1;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:conic-gradient(var(--battery) calc(var(--soc)*1%),#e9edf3 0);
+  position:relative;
+}
+.soc-ring::before {
+  content:"";
+  position:absolute;
+  inset:10px;
+  border-radius:50%;
+  background:white;
+  box-shadow:inset 0 0 18px rgba(71,92,112,.06);
+}
+.soc-ring > div { position:relative; text-align:center; }
+.soc-ring strong { font-size:39px; line-height:1; }
+.soc-ring span { font-size:17px; font-weight:800; }
+.soc-ring small { display:block; margin-top:3px; color:var(--muted); font-size:9px; font-weight:900; letter-spacing:.12em; }
+.battery-state h2 { margin:5px 0 1px; color:#4b9d86; font-size:23px; }
+.battery-state h2[data-state="discharge"] { color:#e08f5b; }
+.battery-state h2[data-state="idle"] { color:#758094; }
+.state-power { font-size:29px; font-weight:850; }
+.battery-state p { margin:5px 0 0; color:var(--muted); font-size:10px; font-weight:650; }
+
+.battery-metrics {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+.battery-metrics article {
+  min-width:0;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:19px;
+  background:rgba(255,255,255,.92);
+  box-shadow:var(--shadow);
+}
+.battery-metrics span { display:block; min-height:26px; color:var(--muted); font-size:10px; font-weight:750; }
+.battery-metrics strong { font-size:24px; line-height:1; }
+.battery-metrics small { margin-left:3px; color:var(--muted); font-size:9px; font-weight:700; }
+
+.battery-card {
+  margin:12px 0;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:rgba(255,255,255,.94);
+  box-shadow:var(--shadow);
+}
+.battery-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.battery-card-head h2 { margin:3px 0 0; font-size:18px; }
+.delta-pill,.temp-range {
+  flex:0 0 auto;
+  padding:7px 10px;
+  border-radius:999px;
+  color:#718095;
+  background:#f2f5f8;
+  font-size:11px;
+  font-weight:850;
+}
+.delta-pill.good { color:#3e9478; background:#e9f8f3; }
+.delta-pill.warning { color:#aa7218; background:#fff5de; }
+.delta-pill.danger { color:#bc5656; background:#fff0f0; }
+.cell-legend { display:flex; gap:12px; margin:11px 0 8px; color:var(--muted); font-size:9px; font-weight:700; }
+.cell-legend i { display:inline-block; width:7px; height:7px; margin-right:4px; border-radius:50%; }
+.cell-legend .min { background:#65acd1; }.cell-legend .normal { background:#67b99f; }.cell-legend .max { background:#e39b5f; }
+.cell-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+.cell-item { padding:10px 5px; border:1px solid #e8edf2; border-radius:14px; background:#fbfcfd; text-align:center; }
+.cell-item span { display:block; color:var(--muted); font-size:8px; font-weight:850; }
+.cell-item strong { font-size:17px; }
+.cell-item small { color:var(--muted); font-size:8px; font-weight:700; }
+.cell-item.cell-min { border-color:#a8d5e7; background:#eef9fd; }
+.cell-item.cell-max { border-color:#f0c5a7; background:#fff6ef; }
+.cell-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-top:10px; text-align:center; color:var(--muted); font-size:9px; }
+.cell-summary b { display:block; margin-top:2px; color:var(--text); font-size:12px; }
+
+.temp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
+.temp-grid article { padding:11px 5px; border-radius:14px; background:#f8fafc; text-align:center; }
+.temp-grid span { display:block; color:var(--muted); font-size:8px; font-weight:850; }
+.temp-grid strong { font-size:17px; }
+.temp-grid small { color:var(--muted); font-size:8px; }
+.battery-empty { grid-column:1/-1; padding:22px 8px; color:var(--muted); text-align:center; font-size:11px; }
+.battery-note { padding:12px 14px; border-radius:17px; color:#6f7d91; background:rgba(240,245,249,.9); font-size:10px; font-weight:700; text-align:center; }
+
+@media (max-width:520px) {
+  .battery-header { padding:15px 14px 7px; }
+  .battery-header .online { font-size:8px; }
+  .battery-hero { grid-template-columns:112px minmax(0,1fr); gap:13px; padding:16px; border-radius:24px; }
+  .soc-ring { width:108px; }
+  .soc-ring strong { font-size:33px; }
+  .battery-state h2 { font-size:19px; }
+  .state-power { font-size:24px; }
+  .battery-metrics { grid-template-columns:repeat(2,1fr); }
+  .battery-metrics strong { font-size:22px; }
+  .cell-item strong { font-size:15px; }
 }

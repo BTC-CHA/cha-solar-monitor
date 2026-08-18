@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#eef9f6">
+  <title>CHA Solar Battery</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="battery-body">
+<header class="battery-header">
+  <div>
+    <div class="energy-kicker">CHA SOLAR</div>
+    <h1>Battery Monitor</h1>
+    <p>16S LiFePO₄ • 100Ah • PACE RS485</p>
+  </div>
+  <div class="online" id="batteryStatus"><span class="online-dot"></span>CONNECTING</div>
+</header>
+
+<main class="battery-page">
+  <section class="battery-hero">
+    <div class="soc-ring" id="socRing">
+      <div><strong id="bmsSoc">--</strong><span>%</span><small>SOC</small></div>
+    </div>
+    <div class="battery-state">
+      <div class="energy-kicker">BMS LIVE</div>
+      <h2 id="bmsState">กำลังรอข้อมูล</h2>
+      <div class="state-power" id="bmsPower">-- W</div>
+      <p id="bmsUpdated">ยังไม่มีข้อมูลจากแบตเตอรี่</p>
+    </div>
+  </section>
+
+  <section class="battery-metrics">
+    <article><span>แรงดันรวม</span><strong id="bmsVoltage">--</strong><small>V</small></article>
+    <article><span>กระแส</span><strong id="bmsCurrent">--</strong><small>A</small></article>
+    <article><span>ความจุคงเหลือ</span><strong id="bmsRemaining">--</strong><small>Ah</small></article>
+    <article><span>สุขภาพแบต</span><strong id="bmsSoh">--</strong><small>% SOH</small></article>
+    <article><span>ความจุเต็ม</span><strong id="bmsFull">--</strong><small>Ah</small></article>
+    <article><span>จำนวนรอบ</span><strong id="bmsCycles">--</strong><small>cycles</small></article>
+  </section>
+
+  <section class="battery-card">
+    <div class="battery-card-head">
+      <div><span class="energy-kicker">CELL BALANCE</span><h2>แรงดันเซลล์ 16 ก้อน</h2></div>
+      <div class="delta-pill" id="deltaPill">Δ -- mV</div>
+    </div>
+    <div class="cell-legend"><span><i class="min"></i>ต่ำสุด</span><span><i class="normal"></i>ปกติ</span><span><i class="max"></i>สูงสุด</span></div>
+    <div class="cell-grid" id="cellGrid"></div>
+    <div class="cell-summary">
+      <span>ต่ำสุด <b id="cellMin">--</b></span>
+      <span>เฉลี่ย <b id="cellAvg">--</b></span>
+      <span>สูงสุด <b id="cellMax">--</b></span>
+    </div>
+  </section>
+
+  <section class="battery-card">
+    <div class="battery-card-head">
+      <div><span class="energy-kicker">TEMPERATURE</span><h2>อุณหภูมิจาก BMS</h2></div>
+      <div class="temp-range" id="tempRange">--°C</div>
+    </div>
+    <div class="temp-grid" id="tempGrid"></div>
+  </section>
+
+  <section class="battery-note" id="batteryNote">
+    🔒 ระบบนี้อ่านค่า BMS อย่างเดียว ไม่มีคำสั่งเปิด/ปิด MOS หรือเขียนค่าแบตเตอรี่
+  </section>
+</main>
+
+<nav class="cha-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Overview</a>
+  <a href="battery.html" class="active"><span class="nav-icon">🔋</span>Battery</a>
+  <a href="history.html"><span class="nav-icon">📊</span>History</a>
+  <a href="alarms.html"><span class="nav-icon">🔔</span>Alarms</a>
+</nav>
+<script src="battery.js"></script>
+</body>
+</html>
+
