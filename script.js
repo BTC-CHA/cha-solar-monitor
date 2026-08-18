@@ -59,7 +59,8 @@ function getBatteryTelemetry(live) {
   return {
     batterySOC:Number(live?.battery?.soc ?? 0),
     batteryVoltage:Number(live?.battery?.voltage ?? 0),
-    batteryCurrent:Number(live?.battery?.current ?? 0),
+    // Normalize SRNE (- = charge) to the BMS/dashboard convention (+ = charge).
+    batteryCurrent:-Number(live?.battery?.current ?? 0),
     batterySource:"SRNE"
   };
 }
@@ -131,7 +132,7 @@ async function getSupabaseLatest() {
     inverterMode:String(x.mode ?? "ONLINE"),
     batterySOC:Number(useCloudBms ? cloudBms.soc : (x.battery_soc ?? 0)),
     batteryVoltage:Number(useCloudBms ? cloudBms.voltage : (x.battery_voltage ?? 0)),
-    batteryCurrent:Number(useCloudBms ? cloudBms.current : (x.battery_current ?? 0)),
+    batteryCurrent:Number(useCloudBms ? cloudBms.current : -(x.battery_current ?? 0)),
     batterySource:useCloudBms ? "BMS" : "SRNE"
   };
 }
