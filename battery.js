@@ -97,12 +97,13 @@ function renderBms(b) {
     ? "ถึง 53.2V: พร้อมกลับมาใช้อินเวอร์เตอร์ตามค่าที่แนะนำ"
     : voltageState === "low" ? "ถึง 50.4V หรือต่ำกว่า: ควรสลับไปใช้ไฟบ้าน" : "แรงดันอยู่ในช่วงใช้งาน";
   $("batteryStatus").classList.remove("offline");
-  $("batteryStatus").innerHTML = '<span class="online-dot"></span>' + (b.source === "CLOUD" ? "CLOUD" : "BMS ONLINE");
+  const sourceLabel = b.source === "CLOUD" ? "BMS CLOUD" : b.source === "SRNE_CLOUD" ? "SRNE CLOUD" : "BMS ONLINE";
+  $("batteryStatus").innerHTML = '<span class="online-dot"></span>' + sourceLabel;
   $("bmsUpdated").textContent = b.recorded_at
-    ? "อัปเดต Cloud " + new Date(b.recorded_at).toLocaleString("th-TH")
+    ? (b.cloud_limited ? "ข้อมูลพื้นฐานจาก SRNE Cloud • " : "อัปเดต BMS Cloud • ") + new Date(b.recorded_at).toLocaleString("th-TH")
     : "อ่านตรงจาก ESP32 • อัปเดตล่าสุดเมื่อ " + new Date().toLocaleTimeString("th-TH");
 
-  renderCells(b.cells_mv || []);
+  renderCells(b.cells_mv || [], b.cloud_limited === true);
   renderCellHealth(b.cells_mv || [], current);
   renderTemperatures(b.temperatures_c || []);
 }
@@ -179,10 +180,12 @@ function renderCellHealth(cells, current) {
   $("cellHealthFindings").innerHTML=findings.map(f=>`<article class="health-finding ${f.level}"><i></i><div><strong>${f.title}</strong><p>${f.text}</p></div></article>`).join("");
 }
 
-function renderCells(cells) {
+function renderCells(cells, cloudLimited = false) {
   const grid = $("cellGrid");
   if (!cells.length) {
-    grid.innerHTML = '<div class="battery-empty">รอข้อมูลแรงดันเซลล์จาก BMS</div>';
+    grid.innerHTML = '<div class="battery-empty">' + (cloudLimited
+      ? 'โหมดนอกบ้าน: Cloud ยังไม่มีข้อมูลแรงดันรายเซลล์จาก PACE BMS'
+      : 'รอข้อมูลแรงดันเซลล์จาก BMS') + '</div>';
     $("deltaPill").textContent = "Δ -- mV";
     return;
   }
@@ -226,8 +229,28 @@ async function fetchCloud() {
   const rows = await r.json();
   if (!rows.length) throw new Error("NO CLOUD DATA");
   const row = rows[0];
-  if (!(row.battery_bms || row.bms_data || row.bms)) throw new Error("BMS CLOUD FIELD NOT READY");
-  return normalizeBms(row, "CLOUD");
+  if (row.battery_bms || row.bms_data || row.bms) return normalizeBms(row, "CLOUD");
+
+  // Until ESP32 uploads the full PACE frame, show the basic SRNE battery
+  // telemetry remotely instead of leaving the whole Battery page blank.
+  const soc = Number(row.battery_soc);
+  return {
+    connected:true,
+    source:"SRNE_CLOUD",
+    cloud_limited:true,
+    recorded_at:row.recorded_at,
+    voltage:Number(row.battery_voltage),
+    // Stored SRNE convention is the reverse of the PACE/dashboard convention.
+    current:-Number(row.battery_current),
+    power:Math.abs(Number(row.battery_voltage) * Number(row.battery_current)),
+    remaining_ah:Number.isFinite(soc) ? soc : NaN,
+    full_ah:100,
+    cycles:NaN,
+    soc,
+    soh:NaN,
+    cells_mv:[],
+    temperatures_c:[]
+  };
 }
 
 async function refreshBattery() {

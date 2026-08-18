@@ -1,4 +1,4 @@
-const CACHE = "cha-solar-v4";
+const CACHE = "cha-solar-v5";
 const APP_SHELL = [
   "./", "./index.html", "./battery.html", "./history.html", "./alarms.html",
   "./style.css", "./script.js", "./smart-dashboard.js", "./mobile-flow.js",
