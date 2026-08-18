@@ -74,6 +74,8 @@ function renderBms(b) {
   const voltage = Number(b.voltage);
   const power = Number.isFinite(b.power) ? Math.abs(b.power) : Math.abs(voltage*current);
   const soc = Math.max(0, Math.min(100, Number(b.soc)));
+  const chargeState = current > .15 ? "charging" : current < -.15 ? "discharging" : "idle";
+  const voltageState = voltage >= 53.2 ? "ready" : voltage <= 50.4 ? "low" : "normal";
 
   $("bmsSoc").textContent = safe(soc,0);
   $("socRing").style.setProperty("--soc", Number.isFinite(soc) ? soc : 0);
@@ -88,6 +90,12 @@ function renderBms(b) {
   const deadband = .15;
   $("bmsState").textContent = current > deadband ? "กำลังชาร์จ" : current < -deadband ? "กำลังคายประจุ" : "แบตเตอรี่พัก";
   $("bmsState").dataset.state = current > deadband ? "charge" : current < -deadband ? "discharge" : "idle";
+  $("batteryHero").className = "battery-hero " + chargeState;
+  $("currentMetric").className = "metric-current " + chargeState;
+  $("voltageMetric").className = "metric-voltage " + voltageState;
+  $("voltageMetric").title = voltageState === "ready"
+    ? "ถึง 53.2V: พร้อมกลับมาใช้อินเวอร์เตอร์ตามค่าที่แนะนำ"
+    : voltageState === "low" ? "ถึง 50.4V หรือต่ำกว่า: ควรสลับไปใช้ไฟบ้าน" : "แรงดันอยู่ในช่วงใช้งาน";
   $("batteryStatus").classList.remove("offline");
   $("batteryStatus").innerHTML = '<span class="online-dot"></span>' + (b.source === "CLOUD" ? "CLOUD" : "BMS ONLINE");
   $("bmsUpdated").textContent = b.recorded_at

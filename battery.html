@@ -18,7 +18,7 @@
 </header>
 
 <main class="battery-page">
-  <section class="battery-hero">
+  <section class="battery-hero" id="batteryHero">
     <div class="soc-ring" id="socRing">
       <div><strong id="bmsSoc">--</strong><span>%</span><small>SOC</small></div>
     </div>
@@ -31,12 +31,34 @@
   </section>
 
   <section class="battery-metrics">
-    <article><span>แรงดันรวม</span><strong id="bmsVoltage">--</strong><small>V</small></article>
-    <article><span>กระแส</span><strong id="bmsCurrent">--</strong><small>A</small></article>
+    <article id="voltageMetric"><span>แรงดันรวม</span><strong id="bmsVoltage">--</strong><small>V</small></article>
+    <article id="currentMetric"><span>กระแส</span><strong id="bmsCurrent">--</strong><small>A</small></article>
     <article><span>ความจุคงเหลือ</span><strong id="bmsRemaining">--</strong><small>Ah</small></article>
     <article><span>สุขภาพแบต</span><strong id="bmsSoh">--</strong><small>% SOH</small></article>
     <article><span>ความจุเต็ม</span><strong id="bmsFull">--</strong><small>Ah</small></article>
     <article><span>จำนวนรอบ</span><strong id="bmsCycles">--</strong><small>cycles</small></article>
+  </section>
+
+  <section class="battery-card">
+    <div class="battery-card-head">
+      <div><span class="energy-kicker">CELL BALANCE</span><h2>แรงดันเซลล์ 16 ก้อน</h2></div>
+      <div class="delta-pill" id="deltaPill">Δ -- mV</div>
+    </div>
+    <div class="cell-legend"><span><i class="min"></i>ต่ำสุด</span><span><i class="normal"></i>ปกติ</span><span><i class="max"></i>สูงสุด</span></div>
+    <div class="cell-grid" id="cellGrid"></div>
+    <div class="cell-summary">
+      <span>ต่ำสุด <b id="cellMin">--</b></span>
+      <span>เฉลี่ย <b id="cellAvg">--</b></span>
+      <span>สูงสุด <b id="cellMax">--</b></span>
+    </div>
+  </section>
+
+  <section class="battery-card">
+    <div class="battery-card-head">
+      <div><span class="energy-kicker">TEMPERATURE</span><h2>อุณหภูมิจาก BMS</h2></div>
+      <div class="temp-range" id="tempRange">--°C</div>
+    </div>
+    <div class="temp-grid" id="tempGrid"></div>
   </section>
 
   <section class="battery-card cell-health-card" id="cellHealthCard">
@@ -60,28 +82,6 @@
       <div class="battery-empty">รอข้อมูลแรงดันเซลล์เพื่อเริ่มวิเคราะห์</div>
     </div>
     <p class="health-footnote" id="cellHealthFootnote">ผลวิเคราะห์เป็นการคัดกรองเบื้องต้น ควรยืนยันหลังพักแบตและขณะชาร์จใกล้เต็ม</p>
-  </section>
-
-  <section class="battery-card">
-    <div class="battery-card-head">
-      <div><span class="energy-kicker">CELL BALANCE</span><h2>แรงดันเซลล์ 16 ก้อน</h2></div>
-      <div class="delta-pill" id="deltaPill">Δ -- mV</div>
-    </div>
-    <div class="cell-legend"><span><i class="min"></i>ต่ำสุด</span><span><i class="normal"></i>ปกติ</span><span><i class="max"></i>สูงสุด</span></div>
-    <div class="cell-grid" id="cellGrid"></div>
-    <div class="cell-summary">
-      <span>ต่ำสุด <b id="cellMin">--</b></span>
-      <span>เฉลี่ย <b id="cellAvg">--</b></span>
-      <span>สูงสุด <b id="cellMax">--</b></span>
-    </div>
-  </section>
-
-  <section class="battery-card">
-    <div class="battery-card-head">
-      <div><span class="energy-kicker">TEMPERATURE</span><h2>อุณหภูมิจาก BMS</h2></div>
-      <div class="temp-range" id="tempRange">--°C</div>
-    </div>
-    <div class="temp-grid" id="tempGrid"></div>
   </section>
 
   <section class="battery-note" id="batteryNote">

@@ -1720,7 +1720,7 @@ footer span {
 .last-updated.stale { color: #b96060; background: #fff0f0; }
 .smart-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr repeat(3,1fr);
   gap: 10px;
 }
 .smart-card {
@@ -2151,7 +2151,7 @@ footer span {
   padding:20px;
   border:1px solid var(--border);
   border-radius:28px;
-  background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(233,248,245,.9));
+  background:#fff;
   box-shadow:var(--shadow);
 }
 .soc-ring {
@@ -2173,9 +2173,12 @@ footer span {
   box-shadow:inset 0 0 18px rgba(71,92,112,.06);
 }
 .soc-ring > div { position:relative; text-align:center; }
-.soc-ring strong { font-size:39px; line-height:1; }
+.soc-ring strong { font-size:45px; line-height:1; }
 .soc-ring span { font-size:17px; font-weight:800; }
 .soc-ring small { display:block; margin-top:3px; color:var(--muted); font-size:9px; font-weight:900; letter-spacing:.12em; }
+.battery-state { min-width:0; padding:15px 17px; border:1px solid #e7eef0; border-radius:22px; background:#f5faf9; }
+.battery-hero.charging .battery-state { background:#edf9f3; border-color:#d5eee3; }
+.battery-hero.discharging .battery-state { background:#fff3e9; border-color:#f4dfcd; }
 .battery-state h2 { margin:5px 0 1px; color:#4b9d86; font-size:23px; }
 .battery-state h2[data-state="discharge"] { color:#e08f5b; }
 .battery-state h2[data-state="idle"] { color:#758094; }
@@ -2196,8 +2199,13 @@ footer span {
   background:rgba(255,255,255,.92);
   box-shadow:var(--shadow);
 }
+.battery-metrics article.metric-current.charging { background:#eaf8f1; border-color:#cfeade; }
+.battery-metrics article.metric-current.discharging { background:#fff1e7; border-color:#f2dac6; }
+.battery-metrics article.metric-current.idle { background:#f5f7f9; }
+.battery-metrics article.metric-voltage.ready { background:#eaf6fb; border-color:#cce7f2; }
+.battery-metrics article.metric-voltage.low { background:#fff0ec; border-color:#f0d4cc; }
 .battery-metrics span { display:block; min-height:26px; color:var(--muted); font-size:10px; font-weight:750; }
-.battery-metrics strong { font-size:24px; line-height:1; }
+.battery-metrics strong { font-size:28px; line-height:1; }
 .battery-metrics small { margin-left:3px; color:var(--muted); font-size:9px; font-weight:700; }
 
 .battery-card {
@@ -2243,6 +2251,7 @@ footer span {
 .battery-empty { grid-column:1/-1; padding:22px 8px; color:var(--muted); text-align:center; font-size:11px; }
 .battery-note { padding:12px 14px; border-radius:17px; color:#6f7d91; background:rgba(240,245,249,.9); font-size:10px; font-weight:700; text-align:center; }
 .cell-health-card { background:linear-gradient(145deg,#fff,#f7fbfa); }
+.live-cost-card { background:linear-gradient(145deg,#fff,#fff7e8); }
 .health-pill { padding:7px 11px; border-radius:999px; font-size:10px; font-weight:850; white-space:nowrap; }
 .health-pill.waiting { color:#728094; background:#eef2f6; }
 .health-pill.good { color:#438b75; background:#e8f7f1; }
@@ -2265,12 +2274,13 @@ footer span {
 @media (max-width:520px) {
   .battery-header { padding:15px 14px 7px; }
   .battery-header .online { font-size:8px; }
-  .battery-hero { grid-template-columns:112px minmax(0,1fr); gap:13px; padding:16px; border-radius:24px; }
-  .soc-ring { width:108px; }
-  .soc-ring strong { font-size:33px; }
+  .battery-hero { grid-template-columns:122px minmax(0,1fr); gap:12px; padding:14px; border-radius:24px; }
+  .soc-ring { width:118px; }
+  .soc-ring strong { font-size:39px; }
+  .battery-state { padding:13px 12px; border-radius:19px; }
   .battery-state h2 { font-size:19px; }
   .state-power { font-size:24px; }
   .battery-metrics { grid-template-columns:repeat(2,1fr); }
-  .battery-metrics strong { font-size:22px; }
+  .battery-metrics strong { font-size:26px; }
   .cell-item strong { font-size:15px; }
 }

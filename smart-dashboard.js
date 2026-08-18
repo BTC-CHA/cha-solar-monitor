@@ -36,12 +36,14 @@ function updateSmartOverview(data, source = "LIVE") {
   const loadKw = Math.max(0, Number(data.loadPower)) / 1000;
   const inverterGridCurrent = Number(data.inverterGridCurrent ?? data.gridCurrent);
   const runtimeHours = loadKw >= 0.05 ? usableKwh / loadKw : Infinity;
+  const liveLoadCost = loadKw * SMART_CONFIG.tariffBahtPerKwh;
 
   smartText("batteryRuntime", formatRuntime(runtimeHours));
   smartText(
     "batteryRuntimeDetail",
     `${usableKwh.toFixed(2)}kWh ใช้ได้ถึงระดับสำรอง ${SMART_CONFIG.reserveSoc}%`
   );
+  smartText("liveLoadCostDetail", `ขณะนี้ ${liveLoadCost.toFixed(2)} บาท/ชม. • โหลด ${Math.round(Number(data.loadPower) || 0)} W`);
 
   let title = "ระบบทำงานปกติ";
   let detail = "กำลังติดตามการใช้พลังงานแบบเรียลไทม์";
@@ -73,11 +75,11 @@ function updateSmartOverview(data, source = "LIVE") {
     title = "Grid กำลังรับโหลดหลัก";
     detail = `โหลดบ้าน ${Math.round(data.loadPower)}W • แบต ${Number(data.batteryCurrent).toFixed(1)}A`;
     tone = "grid";
-  } else if (Number(data.batteryCurrent) < -0.2) {
+  } else if (Number(data.batteryCurrent) > 0.2) {
     title = "Battery กำลังชาร์จ";
     detail = `${Number(data.batteryVoltage).toFixed(1)}V • ${Number(data.batteryCurrent).toFixed(1)}A`;
     tone = "battery";
-  } else if (Number(data.batteryCurrent) > 0.2) {
+  } else if (Number(data.batteryCurrent) < -0.2) {
     title = "Battery กำลังจ่ายพลังงาน";
     detail = `สำรองโหลดปัจจุบันได้ประมาณ ${formatRuntime(runtimeHours)}`;
     tone = "battery";
@@ -93,12 +95,16 @@ function updateSmartOverview(data, source = "LIVE") {
 
 function updateEconomics() {
   const pv = Number(document.getElementById("energyPvToday")?.textContent);
+  const load = Number(document.getElementById("energyLoadToday")?.textContent);
   const grid = Number(document.getElementById("energyGridToday")?.textContent);
   if (Number.isFinite(grid)) {
     smartText("gridCostToday", (grid * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
   }
   if (Number.isFinite(pv)) {
     smartText("solarSavingToday", (pv * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
+  }
+  if (Number.isFinite(load)) {
+    smartText("loadCostToday", (load * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
   }
 }
 
