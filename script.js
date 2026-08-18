@@ -83,8 +83,8 @@ function updateMobileCards(data, source = "LIVE") {
   set("mGridFrequency", data.gridFrequency.toFixed(2));
   set("mConsumer1Power", data.consumer1Connected ? Math.round(data.consumer1Power) : "--");
   set("mConsumer1Current", data.consumer1Connected ? data.consumer1Current.toFixed(2) : "--");
-  set("mMachinePower", data.consumer1Connected ? Math.round(data.machinePowerEstimate) : "--");
-  set("mMachineSource", data.machinePowerEstimated ? "EST. • CT2 READY" : "CT2 LIVE");
+  set("mMachinePower", data.ct2Connected ? Math.round(data.machinePowerEstimate) : "--");
+  set("mMachineSource", data.ct2Connected ? "CT2 LIVE" : "รอข้อมูลจาก CT2");
   set("mInvTemp", data.inverterTemperature.toFixed(1) + "°C");
   set("mInvMode", data.inverterMode.startsWith("STATE") ? "ONLINE" : data.inverterMode);
 

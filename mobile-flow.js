@@ -55,7 +55,7 @@ function updateMobileFlow(data) {
   setMobileFlow(
     "mobileMcPath",
     "mobileMcParticles",
-    data.machinePowerEstimate > 10
+    data.ct2Connected && data.machinePowerEstimate > 10
   );
   setMobileFlow("mobileHomePath", "mobileHomeParticles", loadActive);
   setMobileFlow("mobileBatteryPath", "mobileBatteryParticles", batteryActive);
@@ -74,7 +74,7 @@ function updateMobileFlow(data) {
   setMobileFlowText("flowLoadValue", `${Math.round(Number(data.loadPower))}W`);
   setMobileFlowText(
     "flowMachineValue",
-    data.consumer1Connected ? `≈${Math.round(data.machinePowerEstimate)}W` : "--"
+    data.ct2Connected ? `${Math.round(data.machinePowerEstimate)}W` : "รอ CT2"
   );
   setMobileFlowText(
     "flowBatteryValue",

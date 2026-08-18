@@ -95,7 +95,80 @@ function renderBms(b) {
     : "อ่านตรงจาก ESP32 • อัปเดตล่าสุดเมื่อ " + new Date().toLocaleTimeString("th-TH");
 
   renderCells(b.cells_mv || []);
+  renderCellHealth(b.cells_mv || [], current);
   renderTemperatures(b.temperatures_c || []);
+}
+
+const CELL_HEALTH_KEY = "cha_cell_health_v1";
+let lastHealthSampleAt = 0;
+
+function loadCellHealthHistory() {
+  try {
+    const rows = JSON.parse(localStorage.getItem(CELL_HEALTH_KEY) || "[]");
+    return Array.isArray(rows) ? rows.filter(r => Date.now() - Number(r.at) < 7*86400000).slice(-500) : [];
+  } catch (_) { return []; }
+}
+
+function rememberCellHealth(cells, current) {
+  const now = Date.now();
+  if (now-lastHealthSampleAt < 60000 || cells.length < 2) return loadCellHealthHistory();
+  lastHealthSampleAt = now;
+  const avg = cells.reduce((a,n)=>a+n,0)/cells.length;
+  const lowIndex = cells.indexOf(Math.min(...cells));
+  const rows = loadCellHealthHistory();
+  rows.push({at:now, low:lowIndex, deviation:Math.round(avg-cells[lowIndex]), delta:Math.round(Math.max(...cells)-Math.min(...cells)), current:Number(current)||0});
+  try { localStorage.setItem(CELL_HEALTH_KEY, JSON.stringify(rows.slice(-500))); } catch (_) {}
+  return rows;
+}
+
+function renderCellHealth(cells, current) {
+  if (cells.length < 2) return;
+  const avg = cells.reduce((a,n)=>a+n,0)/cells.length;
+  const min = Math.min(...cells), max = Math.max(...cells), delta = max-min;
+  const lowIndex = cells.indexOf(min), highIndex = cells.indexOf(max);
+  const lowDeviation = avg-min;
+  const state = current > .15 ? "ขณะชาร์จ" : current < -.15 ? "ขณะคายประจุ" : "ขณะพักแบต";
+  const history = rememberCellHealth(cells, current);
+  const recent = history.slice(-60);
+  const repeatCount = recent.filter(r => r.low === lowIndex && r.deviation >= 50).length;
+  const lowName = "C"+String(lowIndex+1).padStart(2,"0");
+  const highName = "C"+String(highIndex+1).padStart(2,"0");
+
+  let level = "good", label = "ปกติ", icon = "✓";
+  let title = "แรงดันเซลล์สมดุลดี";
+  let message = `ผลต่าง ${Math.round(delta)} mV ${state} ยังไม่พบเซลล์ที่ผิดปกติชัดเจน`;
+  if (delta > 150 || min < 2900 || max > 3650) {
+    level="danger"; label="ผิดปกติ"; icon="!";
+    title=`ควรตรวจสอบ ${lowName}`;
+    message=`${lowName} ต่ำกว่าค่าเฉลี่ย ${Math.round(lowDeviation)} mV และต่างจาก ${highName} ${Math.round(delta)} mV ${state}`;
+  } else if (delta > 80 || lowDeviation > 60) {
+    level="warning"; label="ควรเฝ้าดู"; icon="!";
+    title=`เฝ้าดู ${lowName}`;
+    message=`${lowName} ต่ำกว่าค่าเฉลี่ย ${Math.round(lowDeviation)} mV ${state} ควรตรวจซ้ำหลังพักแบต`;
+  } else if (delta > 30) {
+    level="watch"; label="เริ่มต่าง"; icon="i";
+    title="เซลล์เริ่มมีความต่าง";
+    message=`ผลต่าง ${Math.round(delta)} mV ${state} ยังไม่รุนแรง แต่ระบบจะติดตามว่าเกิดซ้ำที่ ${lowName} หรือไม่`;
+  }
+  if (repeatCount >= 3 && level !== "good") message += ` • พบ ${lowName} ต่ำซ้ำ ${repeatCount} ครั้งในข้อมูลล่าสุด`;
+
+  $("cellHealthPill").className="health-pill "+level;
+  $("cellHealthPill").textContent=label;
+  $("cellHealthIcon").className="health-icon "+level;
+  $("cellHealthIcon").textContent=icon;
+  $("cellHealthTitle").textContent=title;
+  $("cellHealthMessage").textContent=message;
+  $("suspectCell").textContent=level === "good" ? "ไม่พบ" : lowName;
+  $("suspectDeviation").textContent=Math.round(lowDeviation)+" mV";
+  $("suspectCount").textContent=repeatCount ? repeatCount+" ครั้ง" : "ยังไม่พบซ้ำ";
+
+  const findings=[];
+  findings.push({level, title:`${lowName} ต่ำสุด ${safe(min/1000,3)} V`, text:`ต่ำกว่าค่าเฉลี่ย ${Math.round(lowDeviation)} mV • ${state}`});
+  if (delta > 80) findings.push({level:delta>150?"danger":"warning", title:`ความต่างรวม ${Math.round(delta)} mV`, text:`สูงสุด ${highName} ${safe(max/1000,3)} V • ต่ำสุด ${lowName} ${safe(min/1000,3)} V`});
+  if (current < -.15 && min < 3000) findings.push({level:"danger", title:"เซลล์ต่ำกว่า 3.000 V ขณะจ่ายโหลด", text:"ลดโหลดหรือสลับไฟบ้าน และตรวจแรงดันอีกครั้งหลังพัก 10–15 นาที"});
+  if (repeatCount >= 3) findings.push({level:"warning", title:`${lowName} ต่ำซ้ำต่อเนื่อง`, text:"ควรตรวจจุดต่อ สายวัด BMS และเปรียบเทียบอีกครั้งตอนชาร์จใกล้เต็ม"});
+  if (level === "good") findings[0]={level:"good", title:"ยังไม่พบเซลล์ต้องสงสัย", text:`ทุกเซลล์อยู่ใกล้ค่าเฉลี่ย ผลต่างรวม ${Math.round(delta)} mV`};
+  $("cellHealthFindings").innerHTML=findings.map(f=>`<article class="health-finding ${f.level}"><i></i><div><strong>${f.title}</strong><p>${f.text}</p></div></article>`).join("");
 }
 
 function renderCells(cells) {
@@ -165,7 +238,7 @@ async function refreshBattery() {
 }
 
 renderCells([]);
+renderCellHealth([], 0);
 renderTemperatures([]);
 refreshBattery();
 setInterval(refreshBattery, 5000);
-

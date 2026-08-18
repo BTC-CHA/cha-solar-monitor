@@ -2242,6 +2242,25 @@ footer span {
 .temp-grid small { color:var(--muted); font-size:8px; }
 .battery-empty { grid-column:1/-1; padding:22px 8px; color:var(--muted); text-align:center; font-size:11px; }
 .battery-note { padding:12px 14px; border-radius:17px; color:#6f7d91; background:rgba(240,245,249,.9); font-size:10px; font-weight:700; text-align:center; }
+.cell-health-card { background:linear-gradient(145deg,#fff,#f7fbfa); }
+.health-pill { padding:7px 11px; border-radius:999px; font-size:10px; font-weight:850; white-space:nowrap; }
+.health-pill.waiting { color:#728094; background:#eef2f6; }
+.health-pill.good { color:#438b75; background:#e8f7f1; }
+.health-pill.watch { color:#917626; background:#fff7d9; }
+.health-pill.warning { color:#b66f35; background:#fff0e4; }
+.health-pill.danger { color:#bd5656; background:#ffebeb; }
+.health-overview { display:grid; grid-template-columns:42px 1fr; gap:11px; align-items:center; margin-top:14px; padding:12px; border:1px solid #e8eef0; border-radius:17px; background:rgba(255,255,255,.82); }
+.health-icon { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; font-size:20px; font-weight:900; color:#718093; background:#edf2f6; }
+.health-icon.good { color:#fff; background:#63b79d; }.health-icon.watch { color:#fff; background:#d4b54f; }.health-icon.warning { color:#fff; background:#e5a064; }.health-icon.danger { color:#fff; background:#dc7373; }
+.health-overview strong { display:block; font-size:14px; }.health-overview p { margin:4px 0 0; color:var(--muted); font-size:10px; line-height:1.45; }
+.health-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:10px; }
+.health-stats article { padding:10px 7px; border:1px solid #e9eef1; border-radius:14px; background:#fff; text-align:center; }
+.health-stats span { display:block; color:var(--muted); font-size:8px; font-weight:750; }.health-stats strong { display:block; margin-top:3px; font-size:12px; }
+.health-findings { display:grid; gap:7px; margin-top:10px; }
+.health-finding { display:grid; grid-template-columns:8px 1fr; gap:9px; align-items:start; padding:10px 11px; border-radius:14px; background:#f8fafb; }
+.health-finding i { width:8px; height:8px; margin-top:3px; border-radius:50%; background:#93a0ae; }.health-finding.good i{background:#63b79d}.health-finding.watch i{background:#d4b54f}.health-finding.warning i{background:#e5a064}.health-finding.danger i{background:#dc7373}
+.health-finding strong { display:block; font-size:11px; }.health-finding p { margin:3px 0 0; color:var(--muted); font-size:9px; line-height:1.4; }
+.health-footnote { margin:10px 2px 0; color:#8792a1; font-size:8px; line-height:1.45; text-align:center; }
 
 @media (max-width:520px) {
   .battery-header { padding:15px 14px 7px; }

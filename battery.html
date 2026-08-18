@@ -39,6 +39,29 @@
     <article><span>จำนวนรอบ</span><strong id="bmsCycles">--</strong><small>cycles</small></article>
   </section>
 
+  <section class="battery-card cell-health-card" id="cellHealthCard">
+    <div class="battery-card-head">
+      <div><span class="energy-kicker">CELL HEALTH REPORT</span><h2>วิเคราะห์ความผิดปกติของเซลล์</h2></div>
+      <div class="health-pill waiting" id="cellHealthPill">รอข้อมูล</div>
+    </div>
+    <div class="health-overview">
+      <div class="health-icon" id="cellHealthIcon">…</div>
+      <div>
+        <strong id="cellHealthTitle">กำลังรวบรวมข้อมูลจาก BMS</strong>
+        <p id="cellHealthMessage">ระบบจะเปรียบเทียบแต่ละเซลล์กับค่าเฉลี่ยและตรวจการเกิดซ้ำ</p>
+      </div>
+    </div>
+    <div class="health-stats">
+      <article><span>เซลล์เฝ้าดู</span><strong id="suspectCell">--</strong></article>
+      <article><span>ต่างจากเฉลี่ย</span><strong id="suspectDeviation">-- mV</strong></article>
+      <article><span>พบซ้ำล่าสุด</span><strong id="suspectCount">--</strong></article>
+    </div>
+    <div class="health-findings" id="cellHealthFindings">
+      <div class="battery-empty">รอข้อมูลแรงดันเซลล์เพื่อเริ่มวิเคราะห์</div>
+    </div>
+    <p class="health-footnote" id="cellHealthFootnote">ผลวิเคราะห์เป็นการคัดกรองเบื้องต้น ควรยืนยันหลังพักแบตและขณะชาร์จใกล้เต็ม</p>
+  </section>
+
   <section class="battery-card">
     <div class="battery-card-head">
       <div><span class="energy-kicker">CELL BALANCE</span><h2>แรงดันเซลล์ 16 ก้อน</h2></div>
@@ -75,4 +98,3 @@
 <script src="battery.js"></script>
 </body>
 </html>
-
