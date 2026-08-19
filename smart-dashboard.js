@@ -131,3 +131,59 @@ updateMobileCards = function (data, source = "LIVE") {
 setInterval(updateFreshness, 1000);
 setInterval(updateEconomics, 3000);
 updateEconomics();
+
+// =====================================================
+// SMART IV V2.5 MINI STATUS + TAB INJECTION
+// Keeps the legacy Overview layout intact: one compact card + one nav item.
+// =====================================================
+const SMART_IV_URL = "http://192.168.1.64/api/smart-iv";
+
+function ensureSmartIvOverview() {
+  if (!document.getElementById("smartIvMini")) {
+    const section = document.querySelector(".smart-overview");
+    const heading = section?.querySelector(".smart-heading");
+    if (section && heading) {
+      const card = document.createElement("a");
+      card.id = "smartIvMini";
+      card.href = "smart-iv.html";
+      card.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:13px 15px;border:1px solid #e5ebe8;border-radius:17px;background:#fff;text-decoration:none;box-shadow:0 6px 18px rgba(68,82,103,.06);";
+      card.innerHTML = `<div><small style="display:block;color:#8a96a4;font-weight:850;font-size:9px;letter-spacing:.06em">SMART IV</small><strong id="smartIvMiniMode" style="display:block;margin-top:3px;color:#4d5968;font-size:17px">--</strong></div><div style="text-align:right"><span id="smartIvMiniState" style="font-size:10px;font-weight:900;color:#8b97a6">CONNECTING</span><small id="smartIvMiniReason" style="display:block;max-width:190px;margin-top:3px;color:#98a2ae;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">รอ ESP32</small></div>`;
+      heading.insertAdjacentElement("afterend", card);
+    }
+  }
+
+  const nav = document.querySelector(".cha-nav");
+  if (nav && !nav.querySelector('a[href="smart-iv.html"]')) {
+    nav.style.gridTemplateColumns = "repeat(5, 1fr)";
+    const a = document.createElement("a");
+    a.href = "smart-iv.html";
+    a.innerHTML = '<span class="nav-icon">⚡</span>SMART IV';
+    nav.appendChild(a);
+  }
+}
+
+async function updateSmartIvMini() {
+  ensureSmartIvOverview();
+  const mode = document.getElementById("smartIvMiniMode");
+  const state = document.getElementById("smartIvMiniState");
+  const reason = document.getElementById("smartIvMiniReason");
+  if (!mode || !state || !reason) return;
+  try {
+    const r = await fetch(SMART_IV_URL, {cache:"no-store"});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const s = await r.json();
+    mode.textContent = `${s.current_mode || "--"} • BMS ${Number(s.soc ?? 0).toFixed(0)}%`;
+    state.textContent = s.enabled ? `${s.control} • ON` : "OFF";
+    state.style.color = s.enabled ? "#4c9b7e" : "#8b97a6";
+    reason.textContent = s.reason || "--";
+  } catch (e) {
+    mode.textContent = "ESP32 OFFLINE";
+    state.textContent = "NO CONTROL";
+    state.style.color = "#c47d7d";
+    reason.textContent = "Smart IV status unavailable";
+  }
+}
+
+ensureSmartIvOverview();
+updateSmartIvMini();
+setInterval(updateSmartIvMini, 4000);
