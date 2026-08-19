@@ -39,10 +39,7 @@ function updateSmartOverview(data, source = "LIVE") {
   const liveLoadCost = loadKw * SMART_CONFIG.tariffBahtPerKwh;
 
   smartText("batteryRuntime", formatRuntime(runtimeHours));
-  smartText(
-    "batteryRuntimeDetail",
-    `${usableKwh.toFixed(2)}kWh ใช้ได้ถึงระดับสำรอง ${SMART_CONFIG.reserveSoc}%`
-  );
+  smartText("batteryRuntimeDetail", `${usableKwh.toFixed(2)}kWh ใช้ได้ถึงระดับสำรอง ${SMART_CONFIG.reserveSoc}%`);
   smartText("liveLoadCostDetail", `ขณะนี้ ${liveLoadCost.toFixed(2)} บาท/ชม. • โหลด ${Math.round(Number(data.loadPower) || 0)} W`);
 
   let title = "ระบบทำงานปกติ";
@@ -97,15 +94,9 @@ function updateEconomics() {
   const pv = Number(document.getElementById("energyPvToday")?.textContent);
   const load = Number(document.getElementById("energyLoadToday")?.textContent);
   const grid = Number(document.getElementById("energyGridToday")?.textContent);
-  if (Number.isFinite(grid)) {
-    smartText("gridCostToday", (grid * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
-  }
-  if (Number.isFinite(pv)) {
-    smartText("solarSavingToday", (pv * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
-  }
-  if (Number.isFinite(load)) {
-    smartText("loadCostToday", (load * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
-  }
+  if (Number.isFinite(grid)) smartText("gridCostToday", (grid * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
+  if (Number.isFinite(pv)) smartText("solarSavingToday", (pv * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
+  if (Number.isFinite(load)) smartText("loadCostToday", (load * SMART_CONFIG.tariffBahtPerKwh).toFixed(2));
 }
 
 function updateFreshness() {
@@ -114,10 +105,7 @@ function updateFreshness() {
   const ageSeconds = Math.floor((Date.now() - smartLastUpdate) / 1000);
   const stale = ageSeconds * 1000 > SMART_CONFIG.staleAfterMs;
   label.className = `last-updated ${stale ? "stale" : "fresh"}`;
-  label.textContent = stale
-    ? `ข้อมูลขาดหาย ${ageSeconds} วินาที`
-    : `${smartLastSource} • อัปเดต ${ageSeconds} วินาทีที่แล้ว`;
-
+  label.textContent = stale ? `ข้อมูลขาดหาย ${ageSeconds} วินาที` : `${smartLastSource} • อัปเดต ${ageSeconds} วินาทีที่แล้ว`;
   const badge = document.getElementById("mobileSource");
   if (badge && stale) badge.textContent = "STALE";
 }
@@ -132,10 +120,6 @@ setInterval(updateFreshness, 1000);
 setInterval(updateEconomics, 3000);
 updateEconomics();
 
-// =====================================================
-// SMART IV V2.5 MINI STATUS + TAB INJECTION
-// Keeps the legacy Overview layout intact: one compact card + one nav item.
-// =====================================================
 const SMART_IV_URL = "http://192.168.1.64/api/smart-iv";
 
 function ensureSmartIvOverview() {
@@ -162,6 +146,21 @@ function ensureSmartIvOverview() {
   }
 }
 
+function syncOverviewSocFromSmartIv(s) {
+  if (!s?.bms_fresh) return;
+  const soc = Number(s.soc);
+  if (!Number.isFinite(soc)) return;
+  smartText("mBatterySOC", soc.toFixed(0));
+  smartText("mBatterySource", "BATTERY • BMS");
+  smartText("batterySOC", soc.toFixed(0));
+  smartText("batteryDataSource", "BMS");
+  if (smartLastData) {
+    smartLastData.batterySOC = soc;
+    smartLastData.batterySource = "BMS";
+    updateSmartOverview(smartLastData, smartLastSource);
+  }
+}
+
 async function updateSmartIvMini() {
   ensureSmartIvOverview();
   const mode = document.getElementById("smartIvMiniMode");
@@ -176,6 +175,7 @@ async function updateSmartIvMini() {
     state.textContent = s.enabled ? `${s.control} • ON` : "OFF";
     state.style.color = s.enabled ? "#4c9b7e" : "#8b97a6";
     reason.textContent = s.reason || "--";
+    syncOverviewSocFromSmartIv(s);
   } catch (e) {
     mode.textContent = "ESP32 OFFLINE";
     state.textContent = "NO CONTROL";
